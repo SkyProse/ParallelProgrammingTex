@@ -1,0 +1,82 @@
+name: Prepare verified integration objects
+on:
+  push:
+    branches: [integration/upstreams-and-theatre-2026]
+    paths: [.github/workflows/prepare-integration.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch pinned source objects
+        run: |
+          git fetch https://github.com/s70c3/ParallelProgrammingTexEn.git 9e68958eb5885e0ad8e948570d49e096ad2366ee
+          git fetch https://github.com/shilko2013/ParallelProgrammingTex.git 53535f92db505a5d0442dca5a3918fe3ea78189a
+      - name: Reconstruct and upload verified Git objects only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, os, pathlib, subprocess, urllib.request
+          assert os.environ['GITHUB_REPOSITORY'] == 'SkyProse/ParallelProgrammingTex'
+          assert os.environ['GITHUB_REF_NAME'] == 'integration/upstreams-and-theatre-2026'
+          root = 'https://api.github.com/repos/SkyProse/ParallelProgrammingTex/git/'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'verified-upstream-integration'}
+          def api(path, data=None):
+              body = None if data is None else json.dumps(data, ensure_ascii=False).encode()
+              request = urllib.request.Request(root + path, data=body, headers=headers, method='GET' if data is None else 'POST')
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          chunks = ['eed3dc4e85daca1b28a30098c4b5f824c581416b', 'a915d714fbe0b6bfaadf786c70e64dd8a0957efd', '4e7c3ecfc3968363fbd562fae97cc006c1ad2200']
+          packed = b''.join(base64.b64decode(api('blobs/' + sha)['content']) for sha in chunks)
+          assert hashlib.sha256(packed).hexdigest() == '503a5b07be7b7bb501113d7268d18c7f1faabd56083be85372b3687f975398cf'
+          raw = lzma.decompress(packed, memlimit=256 * 1024 * 1024)
+          assert len(raw) == 73349
+          payload = json.loads(raw)
+          expected = 'c508f3d694e907ab801655facd01a67873a109c7'
+          assert payload['tree'] == expected
+          assert len(payload['blobs']) == 36 and len(payload['trees']) == 10
+          for blob in payload['blobs']:
+              if 'text' in blob:
+                  text = blob['text']
+              else:
+                  text = subprocess.check_output(['git', 'cat-file', 'blob', blob['base']]).decode()
+                  for start, end, replacement in reversed(blob['edits']):
+                      assert 0 <= start <= end <= len(text)
+                      text = text[:start] + replacement + text[end:]
+              data = text.encode()
+              sha = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+              assert sha == blob['sha'], sha
+              result = api('blobs', {'content': base64.b64encode(data).decode(), 'encoding': 'base64'})
+              assert result['sha'] == sha
+              print('Verified blob', sha)
+          pending = {tree['sha']: tree for tree in payload['trees']}
+          while pending:
+              progressed = False
+              for sha, tree in list(pending.items()):
+                  if any(entry['type'] == 'tree' and entry['sha'] in pending for entry in tree['tree']):
+                      continue
+                  result = api('trees', {'tree': tree['tree']})
+                  assert result['sha'] == sha, (sha, result['sha'])
+                  del pending[sha]
+                  progressed = True
+                  print('Verified tree', sha)
+              assert progressed, 'Unresolvable tree dependency'
+          assert api('trees/' + expected)['sha'] == expected
+          manifest = {'tree': expected, 'blobs': 36, 'trees': 10, 'refsChanged': False, 'payloadSHA256': hashlib.sha256(packed).hexdigest()}
+          pathlib.Path('integration-object-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('Verified integration tree: `' + expected + '`\n\n36 blobs and 10 trees uploaded. No branch, tag or pull request was moved by this job.\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-integration-object-manifest
+          path: integration-object-manifest.json
+          retention-days: 14
