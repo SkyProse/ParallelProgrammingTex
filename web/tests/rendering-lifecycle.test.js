@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {Vector3} from 'three/webgpu';
 import {TheatreRenderer} from '../src/renderer.js';
 import {createDeadlock,stepDeadlock} from '../src/core/deadlock.js';
+import {createRace,stepRace} from '../src/core/race.js';
 
 function fixture({pendingInit=false}={}){
  const keys=['document','location','matchMedia','ResizeObserver','requestAnimationFrame','cancelAnimationFrame'];
@@ -88,5 +89,30 @@ test('repeated WebGPU losses exhaust one automatic recovery until the user expli
   backends[2].onDeviceLost({api:'WebGPU',message:'later loss after user retry'});
   await settled();
   assert.equal(backends.length,4,'explicit retry starts a new one-attempt recovery budget');
+ }finally{await world.dispose();restore();}
+});
+
+test('a RAF timestamp preceding a new flow stays at its origin and does not disable graphics',async()=>{
+ const {world,restore}=fixture();
+ try{
+  world.update('race',stepRace(createRace(),0));await world.init();
+  const flow=world.flows[0],origin=flow.curve.getPoint(0).toArray();
+  world.draw(flow.start-.5);
+  assert.equal(world.ready,true,'frame timestamps can precede performance.now() used during the same frame');
+  assert.deepEqual(flow.mesh.position.toArray(),origin);
+  world.draw(flow.start+10_000);
+  assert.equal(world.ready,true);assert.equal(flow.mesh.visible,false);
+ }finally{await world.dispose();restore();}
+});
+
+test('a RAF timestamp preceding a camera transition cannot interpolate beyond its start',async()=>{
+ const {world,restore}=fixture();
+ try{
+  world.update('deadlock',createDeadlock());await world.init();world.setCameraPreset('top');
+  const transition=world.cameraTransition,origin=transition.from.toArray(),end=transition.to.toArray();
+  world.draw(transition.start-100);
+  assert.deepEqual(world.camera.position.toArray(),origin);
+  world.draw(transition.start+10_000);
+  assert.deepEqual(world.camera.position.toArray(),end);assert.equal(world.cameraTransition,null);
  }finally{await world.dispose();restore();}
 });

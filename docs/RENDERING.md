@@ -28,6 +28,10 @@ layout do not change model state or advance time. Reduced-motion changes are
 observed at runtime. Rendering uses request-on-change scheduling and stops when
 the view is hidden or a computation is being measured.
 
+Animation progress is clamped to the closed interval [0, 1]. A browser's frame
+timestamp can precede a trajectory created later in the same frame; this must
+not send a negative curve parameter into Three.js or disable the scene.
+
 ## Resource and quality bounds
 
 Shared geometry and materials have a bounded inactive cache, while resources

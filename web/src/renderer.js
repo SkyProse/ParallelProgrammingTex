@@ -225,14 +225,16 @@ export class TheatreRenderer {
     try {
       let animating=false;
       if(this.cameraTransition){
-        const t=Math.min(1,(now-this.cameraTransition.start)/420),eased=t*t*(3-2*t);
+        const t=Math.max(0,Math.min(1,(now-this.cameraTransition.start)/420)),eased=t*t*(3-2*t);
         this.camera.position.lerpVectors(this.cameraTransition.from,this.cameraTransition.to,eased);
         this.controls?.target.lerpVectors(this.cameraTransition.targetFrom,this.cameraTransition.targetTo,eased);
         this.controls?.update();
         if(t>=1)this.finishCameraTransition();else animating=true;
       }
       for(const flow of this.flows){
-        const t=Math.min(1,(now-flow.start)/650);flow.mesh.position.copy(flow.curve.getPoint(t));
+        // A RAF timestamp marks the frame boundary and can precede a flow
+        // created with performance.now() later in that same browser frame.
+        const t=Math.max(0,Math.min(1,(now-flow.start)/650));flow.mesh.position.copy(flow.curve.getPoint(t));
         flow.mesh.visible=this.motion&&t<1;animating||=this.motion&&t<1;
       }
       if(animating&&this.lastAnimationFrame!==null&&this.quality.observeFrame(now-this.lastAnimationFrame)){

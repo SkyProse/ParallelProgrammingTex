@@ -9,6 +9,10 @@ test.beforeEach(async({page})=>{
  });
 });
 test.afterEach(async({page})=>{
+ if(test.info().status!==test.info().expectedStatus&&!page.isClosed()){
+  const state=await diagnostics(page).catch(error=>({diagnosticsError:error.message}));
+  await test.info().attach('runtime-after-failure',{body:JSON.stringify(state,null,2),contentType:'application/json'});
+ }
  // A visible canvas alone does not prove that its shader pipeline compiled.
  expect(graphicsErrors.get(page)??[]).toEqual([]);
 });
