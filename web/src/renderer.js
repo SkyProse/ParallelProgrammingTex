@@ -11,7 +11,7 @@ export class TheatreRenderer {
  constructor({canvas,labels,onAction,onNode,onBackend}){
   this.canvas=canvas;this.labelsEl=labels;this.onAction=onAction;this.onNode=onNode;this.onBackend=onBackend;
   this.scene=new THREE.Scene();this.scene.background=new THREE.Color(0x122029);this.scene.fog=new THREE.FogExp2(0x122029,.045);
-  this.camera=new THREE.PerspectiveCamera(38,1,.1,80);this.camera.position.set(7,7,10);
+  this.camera=new THREE.PerspectiveCamera(38,1,.1,80);this.camera.position.set(6,6,8.5);
   this.group=new THREE.Group();this.scene.add(this.group);this.labelPoints=[];this.picks=[];this.flows=[];this.paused=false;this.ready=false;
   this.pulse=uniform(.6);this.motion=!matchMedia('(prefers-reduced-motion: reduce)').matches;
   this.scene.add(new THREE.HemisphereLight(0xb8e6ef,0x233332,2.6));
@@ -54,7 +54,7 @@ export class TheatreRenderer {
     if(o?.userData.node)this.onNode?.(o.userData.node);else if(o?.userData.thread!==undefined)this.onAction?.(o.userData.thread);}
   });
  }
- resetCamera(){this.camera.position.set(7,7,10);this.controls?.target.set(0,.1,0);this.controls?.update();this.requestRender();}
+ resetCamera(){this.camera.position.set(6,6,8.5);this.controls?.target.set(0,.1,0);this.controls?.update();this.requestRender();}
  setPaused(value){this.paused=value;if(value&&this.raf){cancelAnimationFrame(this.raf);this.raf=null;}if(!value)this.requestRender();}
  setVisible(value){this.visible=value;if(value)this.requestRender();}
  requestRender(){if(!this.ready||this.paused||this.visible===false||this.raf)return;this.raf=requestAnimationFrame(()=>{this.raf=null;this.draw();});}

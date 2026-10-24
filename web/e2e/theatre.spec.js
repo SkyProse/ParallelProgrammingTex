@@ -60,8 +60,10 @@ test('real browser JS/Workers/GPU measurement validates each output and keeps co
  await expect(page.getByRole('button',{name:'Начать эксперимент →',exact:true})).toBeEnabled({timeout:90000});
  await expect(page.locator('#bench-sizes')).toHaveValue('small');await expect(page.locator('#bench-repetitions')).toHaveValue('3');
  const report=await page.evaluate(async()=>{const {runBenchmark}=await import('/src/compute/benchmark.js');return runBenchmark({sizes:[257],repetitions:3});});
+ const adapterAvailable=await page.evaluate(async()=>{const {probeGPU}=await import('/src/compute/gpu.js');return (await probeGPU()).supported;});
  expect(report.rows.find(r=>r.backend==='js').status).toBe('ok');
  expect(report.rows.find(r=>r.backend==='workers').status).toBe('ok');
+ if(adapterAvailable)expect(report.rows.find(r=>r.backend==='webgpu').status).toBe('ok');
  for(const row of report.rows){if(row.status==='ok'){expect(row.correctness.verified).toBe(true);expect(row.samples).toHaveLength(3);}else expect(row.samples).toEqual([]);}
  await test.info().attach('browser-measurements',{body:JSON.stringify(report,null,2),contentType:'application/json'});
 });
@@ -84,16 +86,21 @@ test('WebGL fallback renders the real scene without uncaught errors',async({page
  await page.goto('/?renderer=webgl#deadlock');
  await expect(page.locator('#renderer-label')).toHaveText('WebGL 2 · TSL');
  await expect(page.locator('#world')).toBeVisible();
+ await page.screenshot({path:test.info().outputPath('deadlock-space.png'),fullPage:true});
  await page.getByRole('button',{name:'Развернуть исполнение в пространственный граф всех состояний',exact:true}).click();
  await expect(page.locator('#world-labels')).toContainText('23 СОСТОЯНИЙ');
  expect(errors).toEqual([]);
  await page.screenshot({path:test.info().outputPath('state-space.png')});
+ await page.locator('[data-scene="memory"]').click();await expect(page.locator('#world-labels')).toContainText('CACHE LINE');
+ await page.screenshot({path:test.info().outputPath('memory-space.png'),fullPage:true});
 });
 
 test('mobile layout, no-GPU fallback and keyboard controls keep the same semantics',async({page})=>{
  await page.setViewportSize({width:390,height:844});
  await page.addInitScript(()=>{Object.defineProperty(navigator,'gpu',{value:undefined});const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...rest){if(type==='webgl2'||type==='webgpu')return null;return original.call(this,type,...rest);};});
  await page.goto('/');await expect(page.locator('#alternative-view')).toBeVisible();
+ const geometry=await page.evaluate(()=>({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,elements:[...document.querySelectorAll('body *')].map(element=>{const box=element.getBoundingClientRect(),style=getComputedStyle(element);return {tag:element.tagName,id:element.id,class:element.getAttribute('class'),left:box.left,right:box.right,width:box.width,clientWidth:element.clientWidth,scrollWidth:element.scrollWidth,minWidth:style.minWidth,gridColumns:style.gridTemplateColumns,overflowX:style.overflowX};}).filter(element=>element.width>0&&(element.right>innerWidth+1||element.left< -1)).slice(0,20)}));
+ if(geometry.scrollWidth>geometry.width)await test.info().attach('mobile-overflow-geometry',{body:JSON.stringify(geometry,null,2),contentType:'application/json'});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.getByRole('button',{name:'На шаг назад',exact:true}).click();
  await page.getByRole('button',{name:'Шаг T0 →',exact:true}).click();

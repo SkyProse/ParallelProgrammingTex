@@ -100,6 +100,7 @@ function togglePlay(){
 function render(){
  const isModel=!!controller,s=controller?.state;
  $('transport').hidden=!isModel;$('branch-bar').hidden=!isModel;
+ $('event-caption').hidden=!isModel;
  $('comparison').hidden=true;
  const kind=(scene.id==='benchmark'&&report?.kind==='imported')||(scene.id==='gpu'&&gpuResult?.kind==='imported-gpu')?'imported':isModel?'model':'measured';
  const successful=scene.id==='gpu'?gpuResult?.status==='ok':scene.id==='benchmark'?report?.rows?.some(r=>r.status==='ok'):false;
@@ -169,7 +170,7 @@ function renderMetrics(){
  if(scene.id==='race'){const ex=exploreRace(s.mode);values=[[s.value,'общий счётчик',s.mode==='snapshot'?'локальные вычисления, иной контракт':'контракт: увеличить на 2'],[ex.finalValues.join(' / '),'конечных значений','только в этой учебной модели'],[ex.states,'состояний при переборе','SC-модель, не исходы C++ UB']];}
  if(scene.id==='memory')values=[[s.metrics.invalidations,'инвалидированных копий',`false / true sharing: ${s.metrics.falseSharing} / ${s.metrics.trueSharing}`],[s.memory.bytes+' Б','занято раскладкой',`${s.memory.bytes/(s.config.count*2)}× от полезных байтов`],[s.metrics.transfers,'условных передач','не аппаратный счётчик']];
  if(scene.id==='cas')values=[[Object.values(s.nodes).filter(n=>n.published).length-1,'узлов опубликовано','всего два добавления'],[s.events.filter(e=>e.success===false).length,'отказов CAS','включая заданные ложные'],[s.tail,'текущий хвост','может временно отставать']];
- if(scene.id==='gpu')values=[[gpuResult?.status==='ok'?gpuResult.values.length:'—','проверенных вызовов','считаны из GPU-буфера'],[gpuResult?.status==='ok'?gpuResult.workgroups.length:'—','рабочих групп','global / local / workgroup ID'],[gpuResult?.subgroupSizes?.join(', ')||'—','наблюдаемые subgroup sizes','размер не фиксируется как 32']];
+ if(scene.id==='gpu')values=[[gpuResult?.status==='ok'?gpuResult.values.length:'—','проверенных вызовов',gpuResult?.kind==='imported-gpu'?'структура импортированного отчёта':'считаны из GPU-буфера'],[gpuResult?.status==='ok'?gpuResult.workgroups.length:'—','рабочих групп','global / local / workgroup ID'],[gpuResult?.subgroupSizes?.join(', ')||'—','наблюдаемые subgroup sizes','размер не фиксируется как 32']];
  if(scene.id==='benchmark'){const ok=report?.rows?.filter(r=>r.status==='ok'||r.correctness===true)||[];values=[[ok.length||'—','проверенных серий','неудачные результаты не сравниваем'],[ok.length?ok[0].samples.length:'—','повторов на серию','первый запуск отдельно'],[report?.kind==='imported'?'ИМПОРТ':report?'ЗАМЕР':'—','происхождение данных',report?.kind==='imported'?(report.environment?.execution==='native'?'внешний C++/OpenMP запуск':'внешняя браузерная сессия'):'текущий браузер и устройство']];}
  $('metrics').innerHTML=values.map(([value,label,note])=>`<div class="metric"><div class="metric-value">${h(value)}</div><div class="metric-label">${h(label)}<small>${h(note)}</small></div></div>`).join('');
 }
