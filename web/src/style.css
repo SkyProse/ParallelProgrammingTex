@@ -11,4 +11,47 @@
 #alternative-view.spatial-memory{overflow:auto}
 .spatial-memory .spatial-fallback-shell{height:auto;min-height:100%}
 .spatial-memory svg.spatial-fallback{height:auto!important}
+/* Scene controls are secondary to the lesson; inspection stays usable without a GPU. */
+.stage-toolbar{height:auto;min-height:46px;flex-wrap:wrap;padding-top:5px;padding-bottom:5px}
+.view-tabs{min-height:35px;flex-shrink:0}
+.stage-toolbar .icon-button{min-width:32px}
+.scene-tools{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid #25323d;background:#14212a}
+.scene-tools label{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:10px}
+.scene-tools select{font-size:10px;padding:5px 7px;max-width:132px}
+.scene-tools-hint{margin-left:auto;color:var(--dim);font-size:9px}
+.render-status{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;padding:11px 16px;background:#302c24;border-bottom:1px solid #665137;font-size:11px;color:var(--amber)}
+.render-status>span{flex:1;min-width:180px}
+.render-status .secondary-button{flex-shrink:0}
+.object-explorer{grid-column:1/-1;display:grid;gap:9px;padding-top:13px;margin-top:13px;border-top:1px solid var(--line)}
+.object-explorer label{display:grid;gap:6px;font-size:10px;color:var(--muted)}
+.object-explorer input,.object-explorer select{width:100%;min-width:0}
+.selection-card{position:relative;padding:15px 40px 15px 17px;background:#1a3035;border-top:1px solid #3b6266}
+.selection-card>#close-selection{position:absolute;right:6px;top:8px}
+.inspection-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.inspection-heading h3{font:13px var(--mono);color:var(--text)}
+.inspection-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:14px 0 10px}
+.inspection-facts dt{font-size:9px;color:var(--muted)}
+.inspection-facts dd{margin:3px 0 0;font:12px var(--mono);color:var(--mint);overflow-wrap:anywhere}
+.selection-card p{font-size:10px;color:var(--muted);line-height:1.7;overflow-wrap:anywhere}
+.focus-mode .sidebar,.focus-mode .topbar,.focus-mode .scene-heading,.focus-mode .metrics,.focus-mode .learning-grid,.focus-mode .page-footer{display:none}
+.focus-mode .app-shell{display:block;max-width:none}
+.focus-mode main{padding:16px}
+.experiment.is-focused .viewport{height:clamp(360px,65dvh,950px)}
+.experiment.is-focused .workspace{grid-template-columns:minmax(0,1fr) 310px}
+.experiment.is-focused .renderer-label{max-width:none}
+.experiment.is-focused .stage-toolbar{padding-left:20px;padding-right:20px}
+.stage-caption{max-width:calc(100% - 32px);line-height:1.55}
+.skip-link{top:10px;transform:translateY(-150%);opacity:0;pointer-events:none}
+.skip-link:focus{transform:none;opacity:1;pointer-events:auto}
+@media(max-width:1180px){.scene-tools-hint{display:none}.stage-legend{display:none}}
+@media(max-width:650px){
+ .stage-toolbar{gap:3px;padding-left:10px;padding-right:10px}.view-tabs{gap:12px}.renderer-label{max-width:72px}
+ .scene-tools{gap:10px;padding:9px 11px}.scene-tools label{font-size:9px}.scene-tools select{font-size:10px}
+ .scene-heading h1{font-size:clamp(28px,9vw,36px)}.eyebrow{flex-wrap:wrap;gap:7px}
+ .object-explorer{margin-top:0}.inspection-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .focus-mode main{padding:8px}.experiment.is-focused .viewport{height:52dvh;min-height:300px}
+ .experiment.is-focused .stage-toolbar{padding:5px 10px}.experiment.is-focused .renderer-label{max-width:72px}
+ .top-actions{gap:8px}.book-button{max-width:110px}.breadcrumb{white-space:normal}
+ .viewport:has(#alternative-view.spatial-mode:not([hidden])),.experiment.is-focused .viewport:has(#alternative-view.spatial-mode:not([hidden])){height:280px;min-height:280px}
+}
 [hidden]{display:none!important}

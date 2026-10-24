@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { summarize, seededInput, transformValue, referenceKernel, checksum, validateBenchmarkDocument, MAX_ELEMENTS } from '../src/compute/stats.js';
+import { summarize, seededInput, transformValue, referenceKernel, checksum, validateBenchmarkDocument, MAX_ELEMENTS, KERNEL_ID } from '../src/compute/stats.js';
 
 test('statistics use sample SD and a Student-t interval, retaining the original observations', () => {
   const samples = [1, 2, 3, 4, 5];
@@ -49,7 +49,7 @@ test('partitioned workers preserve global indices and deterministic seeded input
 
 test('measurement import rejects inconsistent samples and preserves measured provenance', () => {
   const samples = [1, 2, 3];
-  const document = { schemaVersion: 1, kind: 'measured', createdAt: '2026-10-24T00:00:00.000Z', environment: { execution: 'browser' }, rows: [{ size: 4, backend: 'js', status: 'ok', samples, summary: summarize(samples), coldMs: 4, timingScope: 'end-to-end', correctness: { verified: true } }] };
+  const document = { schemaVersion: 1, kind: 'measured', experiment: KERNEL_ID, createdAt: '2026-10-24T00:00:00.000Z', environment: { execution: 'browser' }, rows: [{ size: 4, backend: 'js', status: 'ok', samples, summary: summarize(samples), coldMs: 4, timingScope: 'end-to-end', correctness: { verified: true } }] };
   assert.equal(validateBenchmarkDocument(document), document);
   assert.throws(() => validateBenchmarkDocument({ ...document, schemaVersion: 2 }));
   assert.throws(() => validateBenchmarkDocument({ ...document, rows: [{ ...document.rows[0], samples: [1, 2, Infinity] }] }));
@@ -61,7 +61,7 @@ test('measurement import rejects inconsistent samples and preserves measured pro
 test('imported optional GPU pass statistics must agree with their own observations', () => {
   const samples = [1, 2, 3], gpuSamples = [0.1, 0.2, 0.3];
   const row = { size: 4, backend: 'webgpu', status: 'ok', samples, summary: summarize(samples), coldMs: 4, timingScope: 'end-to-end', correctness: { verified: true }, gpuSamples, gpuSummary: summarize(gpuSamples), gpuTimingScope: 'compute pass only' };
-  const document = { schemaVersion: 1, kind: 'measured', createdAt: '2026-10-24T00:00:00.000Z', environment: { execution: 'browser' }, rows: [row] };
+  const document = { schemaVersion: 1, kind: 'measured', experiment: KERNEL_ID, createdAt: '2026-10-24T00:00:00.000Z', environment: { execution: 'browser' }, rows: [row] };
   validateBenchmarkDocument(document);
   assert.throws(() => validateBenchmarkDocument({ ...document, rows: [{ ...row, gpuSummary: { ...row.gpuSummary, median: 999 } }] }));
   assert.throws(() => validateBenchmarkDocument({ ...document, rows: [{ ...row, gpuSamples: [0.1, NaN, 0.3] }] }));
@@ -76,4 +76,14 @@ test('native false-sharing imports validate each counter, layout, and iteration 
   assert.throws(() => validateBenchmarkDocument({ ...document, rows: [{ ...row, correctness: { ...row.correctness, counters: [100, 99] } }] }));
   assert.throws(() => validateBenchmarkDocument({ ...document, rows: [{ ...row, layout: { ...row.layout, strideBytes: 8 } }] }));
   assert.throws(() => validateBenchmarkDocument({ ...document, rows: [{ ...row, size: 101 }] }));
+});
+
+test('benchmark import rejects unrelated or unspecified algorithms before comparing their durations', () => {
+  const samples = [1, 2, 3];
+  const row = { size: 4, backend: 'js', status: 'ok', samples, summary: summarize(samples), coldMs: 4, timingScope: 'end-to-end', correctness: { verified: true } };
+  const document = { schemaVersion: 1, kind: 'measured', experiment: KERNEL_ID, createdAt: '2026-10-24T00:00:00.000Z', environment: { execution: 'browser' }, rows: [row] };
+  assert.equal(validateBenchmarkDocument(document), document);
+  for (const experiment of [undefined, null, '', 'matrix-multiply-v1', 'u32-mix-reduce-v2']) {
+    assert.throws(() => validateBenchmarkDocument({ ...document, experiment }), /experiment/i);
+  }
 });

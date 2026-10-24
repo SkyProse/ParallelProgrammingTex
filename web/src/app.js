@@ -7,6 +7,7 @@ import {encodeSession,decodeSession,validateMeasuredImport,loadProgress,recordAn
 import {runBenchmark} from './compute/benchmark.js';
 import {probeGPU,runGPULoom,validateLoomDocument} from './compute/gpu.js';
 import {validateBenchmarkDocument,summarize} from './compute/stats.js';
+import {inspectMemory,inspectInvocation,renderInspection} from './inspection.js';
 
 const $=id=>document.getElementById(id);
 const MODEL_IDS=['deadlock','race','memory','cas'];
@@ -18,6 +19,58 @@ let benchConfig={sizes:'quick',repetitions:7,workers:2};
 let progress;try{progress=loadProgress(localStorage);}catch{progress=loadProgress({getItem:()=>null});}
 const branches=new Map(),quizStage=new Map(),quizFeedback=new Map();
 let toastTimeout;
+let selection=null,renderState='initializing',focusMode=false;
+
+/** Read-only diagnostics for support and functional browser checks; no performance claims. */
+export function getRuntimeDiagnostics(){
+ return {scene:scene.id,cursor:controller?.cursor??null,renderer:world?.getDiagnostics?.()??null};
+}
+
+function syncRendererControls(info=world?.getDiagnostics?.()??{status:renderState}){
+ const spatial=view==='space'&&scene.id!=='benchmark';
+ $('scene-tools').hidden=!spatial;
+ for(const id of ['camera-preset','render-quality'])$(id).disabled=!world?.ready||busy;
+ if(info?.quality)$('render-quality').value=info.quality;
+ const unavailable=!!info&&!world?.ready;
+ $('render-status').hidden=!spatial||!unavailable;
+ const waiting=['initializing','recovering'].includes(info?.status);
+ $('render-status-text').textContent=waiting?'Готовим 3D. Пока можно продолжить в доступном представлении.':info?.status==='lost'?'Графический контекст потерян. Исполнение сохранено; можно продолжать здесь.':'3D сейчас недоступно. Учебные модели и управление работают.';
+ $('retry-renderer').hidden=!unavailable||waiting;
+ $('retry-renderer').disabled=busy;
+}
+
+function updateRenderState(info){
+ const changed=renderState!==info.status;renderState=info.status;
+ syncRendererControls(info);
+ if(changed)queueMicrotask(()=>render());
+}
+
+function selectObject(item){
+ if(item.type==='memory'&&scene.id==='memory')selection={type:'memory',address:item.address};
+ else if(item.type==='gpu'&&scene.id==='gpu')selection={type:'gpu',globalId:item.globalId,provenance:item.provenance};
+ else return;
+ if(selection.type==='memory'&&$('inspect-address'))$('inspect-address').value=String(selection.address);
+ if(selection.type==='gpu'&&$('inspect-invocation')&&Number.isInteger(selection.globalId))$('inspect-invocation').value=String(selection.globalId);
+ renderSelection();
+}
+
+function renderSelection(){
+ let item=null;
+ if(selection?.type==='memory'&&scene.id==='memory')item=inspectMemory(controller.state,selection.address);
+ if(selection?.type==='gpu'&&scene.id==='gpu')item=gpuResult?.status==='ok'?inspectInvocation(gpuResult,selection.globalId):{type:'gpu',provenance:'schematic'};
+ $('selection-card').hidden=!item;
+ $('selection-content').innerHTML=renderInspection(item);
+}
+
+function toggleFocus(value=!focusMode){
+ focusMode=value;document.body.classList.toggle('focus-mode',value);
+ document.querySelector('.experiment').classList.toggle('is-focused',value);
+ $('focus-stage').setAttribute('aria-pressed',String(value));
+ $('focus-stage').setAttribute('aria-label',value?'Свернуть лабораторию':'Развернуть лабораторию');
+ $('focus-stage').title=value?'Свернуть лабораторию · Esc':'Развернуть лабораторию';
+ $('focus-stage').textContent=value?'↙':'⛶';
+ $('focus-stage').focus({preventScroll:true});
+}
 
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimeout);toastTimeout=setTimeout(()=>$('toast').hidden=true,4500);}
 function openDialog(title,html){$('dialog-title').textContent=title;$('dialog-content').innerHTML=html;if(!$('detail-dialog').open)$('detail-dialog').showModal();}
@@ -28,13 +81,13 @@ function defaultConfig(id){return id==='deadlock'?{ordered:false}:id==='race'?{m
 function navigate(id,{initial=true}={}){
  const chosen=SCENES.find(s=>s.id===id);if(!chosen)return;
  if(busy){job?.abort();job=null;busy=false;world?.setPaused(false);}
- stop();scene=chosen;graphMode=false;view=scene.id==='benchmark'?'score':'space';
+ stop();scene=chosen;selection=null;graphMode=false;view=scene.id==='benchmark'?'score':'space';
  if(MODEL_IDS.includes(scene.id)){
   controller=new Controller(scene.id,defaultConfig(scene.id));
   if(initial){
    if(scene.id==='deadlock'){controller.step(0);controller.step(1);}
    if(scene.id==='race'){controller.step(0);controller.step(1);}
-   if(scene.id==='memory')for(let i=0;i<4;i++)controller.autoStep();
+   if(scene.id==='memory')for(let i=0;i<4;i++)controller.autoStep({memoryMode});
    if(scene.id==='cas')for(const actor of [0,1,0,1,0])controller.step(actor);
   }
  }else controller=null;
@@ -61,7 +114,7 @@ function renderConfiguration(){
  else if(scene.id==='memory')$('configuration').innerHTML=`<label>Раскладка <select id="memory-layout"><option value="aos" ${cfg.layout==='aos'?'selected':''}>AoS · a,b,a,b</option><option value="soa" ${cfg.layout==='soa'?'selected':''}>SoA · a… / b…</option><option value="padded" ${cfg.layout==='padded'?'selected':''}>Padding · разнести поля</option></select></label><label>Линия <select id="line-size">${[...new Set([16,32,64,128,256,cfg.lineSize])].sort((a,b)=>a-b).map(n=>`<option ${n===cfg.lineSize?'selected':''}>${n}</option>`).join('')}</select> Б</label><label>Объектов <select id="memory-count">${[...new Set([4,8,16,cfg.count])].sort((a,b)=>a-b).map(n=>`<option ${n===cfg.count?'selected':''}>${n}</option>`).join('')}</select></label><label>Зазор <input id="memory-padding" type="number" min="0" max="256" step="1" value="${cfg.padding}" ${cfg.layout!=='padded'?'disabled':''}> Б</label>`;
  else if(scene.id==='cas')$('configuration').innerHTML=`<span class="config-label">ПОМОЩЬ ХВОСТУ</span>${segment([['false','Strong CAS'],['true','Weak CAS']],'weak',cfg.weak)}<button class="preset-button" data-preset="cas">Два претендента на next ↗</button><button class="preset-button" data-preset="help">Отставший хвост ↗</button>`;
  else if(scene.id==='gpu')$('configuration').innerHTML='<span class="config-label">WEBGPU COMPUTE</span><span class="pill">global_id → workgroup → subgroup</span><span class="inspector-note" style="margin:0">Каждая ячейка приходит из результата GPU-dispatch.</span>';
- else $('configuration').innerHTML='<span class="config-label">ОДИН ВХОД · ОДНА ЗАДАЧА</span><span class="pill">uint32 transform + reduction</span><button id="show-protocol" class="preset-button">Как устроено измерение ↗</button>';
+ else $('configuration').innerHTML=report?.experiment==='native-false-sharing'?'<span class="config-label">ИМПОРТ · НАТИВНЫЕ СЧЁТЧИКИ</span><span class="pill">packed ↔ padded · независимые атомарные значения</span><button id="show-protocol" class="preset-button">Протокол этого отчёта ↗</button>':'<span class="config-label">ОДИН ВХОД · ОДНА ЗАДАЧА</span><span class="pill">uint32 transform + reduction</span><button id="show-protocol" class="preset-button">Как устроено измерение ↗</button>';
 }
 function changeConfig(key,value){
  if(!controller||busy)return;stop();
@@ -124,7 +177,7 @@ function render(){
  $('stage-legend').hidden=['gpu','benchmark'].includes(scene.id)||view!=='space';
  $('stage-caption').hidden=view!=='space';
  $('stage-hint').textContent=graphMode?'Выберите узел: вернёмся к этому состоянию':scene.id==='deadlock'?'Сплошная стрелка — владение · пунктир — ожидание':scene.id==='memory'?'Платформа = кеш-линия · расстояния схематичны':scene.id==='gpu'?(gpuResult?.kind==='imported-gpu'?'Импортированный dispatch · проверена структура':gpuResult?.status==='ok'?'Результат реального GPU-dispatch':'До запуска показана только схема размещения'):'Выберите поток · перетащите сцену для смены ракурса';
- renderInspector();renderMetrics();renderView();
+ renderInspector();renderMetrics();renderView();renderSelection();syncRendererControls();
 }
 function renderView(){
  const alternative=$('alternative-view');
@@ -157,6 +210,7 @@ function renderInspector(){
    const index=s.events.filter(e=>e.thread===t).length%s.config.count;const field=memoryMode==='separate'?(t?'b':'a'):'a';const write=memoryMode!=='readonly'&&!(memoryMode==='write-read'&&t===1);
    body+=`<section class="thread-card t${t}"><div class="thread-header"><span class="thread-name">T${t} / CORE ${t}</span><span class="thread-status">i = ${index}</span></div><div class="code-block"><div class="code-line current">${write?'write':'read'} ${field}[${index}]</div></div><button class="thread-action" data-actor="${t}">${write?'Записать':'Прочитать'} ${field}[${index}] →</button></section>`;
   }
+  body+=`<div class="object-explorer"><label>Исследовать ячейку<select id="inspect-address">${s.memory.objects.map(o=>`<option value="${o.address}" ${selection?.address===o.address?'selected':''}>${h(o.field)}[${o.index}] · +${o.address} Б</option>`).join('')}</select></label><button id="inspect-object" class="secondary-button">Показать адрес и соседей</button></div>`;
  }else for(let t=0;t<2;t++){
   const pc=scene.id==='cas'?s.threads[t].pc:s.pcs[t],program=controller.program(t),enabled=controller.enabled.includes(t),done=pc>=program.length;
   body+=`<section class="thread-card t${t}"><div class="thread-header"><span class="thread-name">ПОТОК T${t}</span><span class="thread-status">${done?'ГОТОВО':enabled?'МОЖЕТ ИДТИ':'ОЖИДАЕТ'}</span></div><div class="code-block">${program.map((line,i)=>`<div class="code-line${i===pc?' current':i<pc?' done':''}" ${i===pc?'aria-current="step"':''}><span class="line-no">${i+1}</span><span>${h(line)}</span></div>`).join('')}</div><button class="thread-action" data-actor="${t}" ${!enabled?'disabled':''}>Шаг T${t} →</button>${scene.id==='cas'&&s.weak&&s.threads[t].phase==='help-tail'?`<button class="thread-action" data-spurious="${t}">Вызвать spurious failure</button>`:''}</section>`;
@@ -189,6 +243,7 @@ function renderGPUInspector(){
  const known=gpuInfo?.supported;const sizes=gpuInfo?.limits;const possible=[];
  if(gpuInfo?.diagnostics?.subgroupSizeControl?.supported)for(const n of [4,8,16,32,64,128])if(n>=(sizes?.subgroupMinSize??4)&&n<=(sizes?.subgroupMaxSize??128))possible.push(n);
  $('inspector').innerHTML=`<div class="inspector-title">НАСТОЯЩИЙ COMPUTE DISPATCH</div><div class="status-panel ${gpuResult?.status&&gpuResult.status!=='ok'?'waiting':''}"><span class="status-symbol">▦</span><div><strong>${gpuResult?.kind==='imported-gpu'?'Импортированная структура':gpuResult?.status==='ok'?'Буфер прочитан и проверен':gpuResult?'Запуск недоступен':known?'WebGPU доступен':'Проверка возможностей'}</strong><p>${h(gpuResult?.reason??(known?'Выберите размер задачи и рабочей группы.':gpuInfo?.reason??'Проверяем API и адаптер.'))}</p></div></div><div class="gpu-fields"><label>Количество вызовов<select id="gpu-count">${[...new Set([65,256,1024,4096,gpuConfig.count])].sort((a,b)=>a-b).map(n=>`<option ${n===gpuConfig.count?'selected':''}>${n}</option>`).join('')}</select></label><label>Размер workgroup<select id="gpu-workgroup">${[...new Set([32,64,128,256,gpuConfig.workgroupSize])].sort((a,b)=>a-b).map(n=>`<option ${n===gpuConfig.workgroupSize?'selected':''}>${n}</option>`).join('')}</select></label><label>Subgroup size<select id="gpu-subgroup" ${!possible.length?'disabled':''}><option value="auto" ${gpuConfig.subgroupSize==='auto'?'selected':''}>Выбирает драйвер</option>${possible.map(n=>`<option ${Number(gpuConfig.subgroupSize)===n?'selected':''}>${n}</option>`).join('')}</select></label><button class="primary-button" id="run-gpu" ${busy?'disabled':''}>${busy?'Вычисляем…':'Выполнить на GPU →'}</button>${busy?'<button class="secondary-button" id="cancel-gpu">Отменить dispatch</button>':''}<button class="secondary-button" id="gpu-details" ${!gpuResult?'disabled':''}>Таблица вызовов</button></div><p class="inspector-note">Одинаковый цвет может повторяться; точный номер группы — в таблице. Subgroups используются только при поддержке. При отсутствии GPU числовой результат не подменяется моделью.</p>`;
+ if(gpuResult?.status==='ok')$('inspector').insertAdjacentHTML('beforeend',`<div class="object-explorer"><label>Исследовать вызов<input id="inspect-invocation" type="number" min="0" max="${gpuResult.values.length-1}" step="1" value="${selection?.globalId??0}"></label><button id="inspect-object" class="secondary-button">Показать GPU-вызов</button></div>`);
 }
 function renderGPUScore(){
  if(!gpuResult)return '<div class="benchmark-empty"><div class="empty-glyph">▦</div><h3>Загляните внутрь dispatch</h3><p>GPU запишет собственные global, local и workgroup ID. При поддержке добавятся реальные subgroup ID и размеры.</p><span class="pill">Ожидает вашего запуска</span></div>';
@@ -198,9 +253,9 @@ function renderGPUScore(){
 async function runGPU(){
  if(busy)return;const count=Number($('gpu-count').value),workgroupSize=Number($('gpu-workgroup').value),subgroup=$('gpu-subgroup').value;
  gpuConfig={count,workgroupSize,subgroupSize:subgroup};
- busy=true;const localJob=new AbortController();job=localJob;world?.setPaused(true);renderInspector();
+ busy=true;const localJob=new AbortController();job=localJob;world?.setPaused(true);renderInspector();syncRendererControls();
  try{const result=await runGPULoom({count,workgroupSize,subgroupSize:subgroup==='auto'?null:Number(subgroup),signal:localJob.signal});if(job===localJob)gpuResult=result;}
- catch(error){if(job===localJob&&error.name!=='AbortError')gpuResult={status:'error',reason:error.message};}
+ catch(error){if(job===localJob&&error.name!=='AbortError')gpuResult={kind:'measured',status:'error',reason:error.message,values:[],workgroups:[],subgroupSizes:[],features:[],diagnostics:{}};}
  finally{if(job===localJob){busy=false;world?.setPaused(false);render();}}
 }
 function renderBenchmarkInspector(){
@@ -211,13 +266,13 @@ async function startBenchmark(){
  const sizes={quick:[16384,65536,262144],large:[65536,262144,1048576],small:[257]}[$('bench-sizes').value];
  const repetitions=Number($('bench-repetitions').value),workers=Number($('bench-workers').value);
  benchConfig={sizes:$('bench-sizes').value,repetitions,workers};
- busy=true;const localJob=new AbortController();job=localJob;world?.setPaused(true);renderInspector();
+ busy=true;const localJob=new AbortController();job=localJob;world?.setPaused(true);renderInspector();syncRendererControls();
  try{
   const result=await runBenchmark({sizes,repetitions,workers,signal:localJob.signal,onProgress:p=>{
    if(job!==localJob)return;const fill=$('benchmark-progress-fill');if(fill)fill.style.width=`${p.total?p.completed/p.total*100:0}%`;
    const label=$('benchmark-progress-label');if(label)label.textContent=`${p.backend??'Готовим'} · N=${p.size??'…'}${p.repetition?` · повтор ${p.repetition}/${p.repetitions}`:''}. Отрисовка остановлена.`;
   }});
-  if(job===localJob){report=result;toast('Измерения завершены. Корректность проверена отдельно от таймера.');}
+  if(job===localJob){report=result;renderConfiguration();toast('Измерения завершены. Корректность проверена отдельно от таймера.');}
  }catch(error){if(job===localJob)toast(error.name==='AbortError'?'Измерение остановлено. Незавершённые серии не опубликованы.':error.message);}
  finally{if(job===localJob){busy=false;world?.setPaused(false);render();}}
 }
@@ -235,11 +290,16 @@ async function showCapabilities(){
  const diagnostics=gpuInfo.diagnostics||{};
  openDialog('Возможности этого устройства',`<p>Отрисовка: <strong>${h(backendLabel)}</strong>. Compute: <strong>${gpuInfo.supported?'WebGPU доступен':'недоступен'}</strong>.</p>${gpuInfo.reason?`<p>${h(gpuInfo.reason)}</p>`:''}${Object.entries(diagnostics).map(([key,value])=>`<div class="capability-row"><span>${h(key)}<small style="display:block">${h(value.note)}</small></span><strong>${value.supported?'ОБНАРУЖЕНО':'НЕ ОБНАРУЖЕНО'}</strong></div>`).join('')}<h3>Статус новых возможностей</h3>${CAPABILITY_NOTES.map(n=>`<div class="source-card"><strong>${h(n.title)}</strong><small>${h(n.status)}</small><p>${h(n.detail)}</p></div>`).join('')}<p>buffer_view, immediates и HTML-in-Canvas здесь диагностируются. Они не требуются для базового опыта и не заявляются как универсально доступные. Subgroup-size-control доступен в GPU-сцене только при поддержке адаптера.</p>`);
 }
-function showProtocol(){openDialog('Что именно измеряет обсерватория',`<p>Все браузерные способы получают один воспроизводимый массив uint32, выполняют одинаковое целочисленное преобразование и сумму по модулю 2³². Проверяются все выходные элементы и сумма.</p><p>Первое измеренное время включает создание backend и первый прогон; оно не гарантирует пустые аппаратные кеши. Каждая тёплая выборка измеряет полную операцию. JS: выделение выхода и вычисления; Workers: разделение, передачу, вычисления и сборку; GPU: загрузку, dispatch, редукцию и чтение.</p><p>Генерация входа и проверка результата находятся вне таймера. Отрисовка остановлена. Интервал Student-t 95% относится к среднему; медиана показывается отдельно. Выборки могут быть зависимыми — это исследовательская оценка данного устройства.</p><p>Если доступен timestamp-query, дополнительный интервал GPU-pass показан отдельно. Он не заменяет полное время.</p><p>Для выводов о масштабировании меняйте размер входа. Ускорение относительно JS не означает ускорение относительно нативной OpenMP-программы.</p>${report?`<div class="table-scroll"><pre class="code-preview">${h(JSON.stringify(report.environment,null,2))}</pre></div>`:''}`);}
+function showProtocol(){
+ if(report?.environment?.execution==='native'){
+  openDialog('Протокол импортированного нативного запуска',`<p>Этот отчёт получен внешней C++/OpenMP-программой. Импорт проверяет структуру, исходные выборки, контроль результата и согласованность статистики; он не повторяет измерение.</p><p>${report.experiment==='native-false-sharing'?'Эксперимент false sharing: потоки увеличивают независимые атомарные счётчики с relaxed-порядком. Сравниваются плотная (packed) и разнесённая (padded) раскладки. Размер задачи — инкременты на поток. Размер кеш-линии является заданным предположением.':'Сравниваются последовательная и OpenMP-реализации uint32 kernel. Массивы предварительно выделены; граница таймера отличается от браузерного end-to-end.'}</p><h3>Граница таймера из отчёта</h3><p>${h(report.rows[0]?.timingScope)}</p><pre class="code-preview">${h(JSON.stringify(report.environment,null,2))}</pre><p>Форма справа запускает новый браузерный эксперимент с собственной задачей и протоколом.</p>`);return;
+ }
+ openDialog('Что именно измеряет обсерватория',`<p>Все браузерные способы получают один воспроизводимый массив uint32, выполняют одинаковое целочисленное преобразование и сумму по модулю 2³². Проверяются все выходные элементы и сумма.</p><p>Первое измеренное время включает создание backend и первый прогон; оно не гарантирует пустые аппаратные кеши. Каждая тёплая выборка измеряет полную операцию. JS: выделение выхода и вычисления; Workers: разделение, передачу, вычисления и сборку; GPU: загрузку, dispatch, редукцию и чтение.</p><p>Генерация входа и проверка результата находятся вне таймера. Отрисовка остановлена. Интервал Student-t 95% относится к среднему; медиана показывается отдельно. Выборки могут быть зависимыми — это исследовательская оценка данного устройства.</p><p>Если доступен timestamp-query, дополнительный интервал GPU-pass показан отдельно. Он не заменяет полное время.</p><p>Для выводов о масштабировании меняйте размер входа. Ускорение относительно JS не означает ускорение относительно нативной OpenMP-программы.</p>${report?`<div class="table-scroll"><pre class="code-preview">${h(JSON.stringify(report.environment,null,2))}</pre></div>`:''}`);
+}
 function showNative(){openDialog('Нативный эксперимент C++ / OpenMP',`<p>В репозитории есть отдельный компилируемый стенд. Сначала запускаются проверки корректности, затем собирается собственный JSON-отчёт. Браузер не притворяется OpenMP.</p><pre class="code-preview">git clone https://github.com/SkyProse/ParallelProgrammingTex.git
 cd ParallelProgrammingTex
-git switch feature/concurrency-theatre
-bash native/run.sh --size 262144 --threads 4 --repetitions 7 &gt; native-results.json</pre><p>Откройте «Импорт» и выберите JSON. Он получит отметку «ИМПОРТ»: измерения не повторяются и происхождение не удостоверяется автоматически. Полный протокол и отдельный false-sharing эксперимент описаны в <a href="https://github.com/SkyProse/ParallelProgrammingTex/tree/feature/concurrency-theatre/native" target="_blank" rel="noreferrer">native/ ↗</a>.</p>`);}
+git switch feature/theatre-webgl-finale
+bash native/run.sh --size 262144 --threads 4 --repetitions 7 &gt; native-results.json</pre><p>Откройте «Импорт» и выберите JSON. Он получит отметку «ИМПОРТ»: измерения не повторяются и происхождение не удостоверяется автоматически. Полный протокол и отдельный false-sharing эксперимент описаны в <a href="https://github.com/SkyProse/ParallelProgrammingTex/tree/feature/theatre-webgl-finale/native" target="_blank" rel="noreferrer">native/ ↗</a>.</p>`);}
 function download(name,text){const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 function exportData(){
  if(controller)download(`concurrency-${scene.id}.json`,encodeSession(controller.snapshot()));
@@ -271,10 +331,24 @@ $('configuration').addEventListener('change',e=>{const keys={'memory-layout':'la
 $('inspector').addEventListener('click',e=>{
  const actor=e.target.closest('[data-actor]'),spurious=e.target.closest('[data-spurious]');if(actor)act(Number(actor.dataset.actor));if(spurious)act(Number(spurious.dataset.spurious),true);
  if(e.target.id==='run-gpu')runGPU();if(e.target.id==='run-benchmark')startBenchmark();if(['cancel-benchmark','cancel-gpu'].includes(e.target.id))job?.abort();if(e.target.id==='gpu-details')openDialog('Данные GPU-dispatch',renderGPUScore());if(e.target.id==='native-instructions')showNative();
+ if(e.target.id==='inspect-object'){
+  if(scene.id==='memory')selectObject({type:'memory',address:Number($('inspect-address').value)});
+  else if(scene.id==='gpu'){
+   const field=$('inspect-invocation');
+   if(!field.reportValidity())return;
+   const item=inspectInvocation(gpuResult,Number(field.value));
+   if(item)selectObject(item);else toast('Выберите номер из текущего результата dispatch.');
+  }
+ }
 });
-$('inspector').addEventListener('change',e=>{if(e.target.id==='access-mode'){memoryMode=e.target.value;renderInspector();}const key={'gpu-count':'count','gpu-workgroup':'workgroupSize','gpu-subgroup':'subgroupSize'}[e.target.id];if(key)gpuConfig[key]=e.target.value==='auto'?'auto':Number(e.target.value);const benchKey={'bench-sizes':'sizes','bench-repetitions':'repetitions','bench-workers':'workers'}[e.target.id];if(benchKey)benchConfig[benchKey]=benchKey==='sizes'?e.target.value:Number(e.target.value);});
+$('inspector').addEventListener('change',e=>{if(e.target.id==='access-mode'){stop();branches.set(scene.id,controller.snapshot());controller.discardFuture();memoryMode=e.target.value;render();toast('Тип обращений изменён. Новые шаги образуют отдельную ветку; прежняя запись сохранена для сравнения.');}const key={'gpu-count':'count','gpu-workgroup':'workgroupSize','gpu-subgroup':'subgroupSize'}[e.target.id];if(key)gpuConfig[key]=e.target.value==='auto'?'auto':Number(e.target.value);const benchKey={'bench-sizes':'sizes','bench-repetitions':'repetitions','bench-workers':'workers'}[e.target.id];if(benchKey)benchConfig[benchKey]=benchKey==='sizes'?e.target.value:Number(e.target.value);});
 document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{view=button.dataset.view;render();}));
-$('reset-camera').addEventListener('click',()=>world?.resetCamera());
+$('reset-camera').addEventListener('click',()=>{$('camera-preset').value='overview';world?.resetCamera();});
+$('camera-preset').addEventListener('change',e=>world?.setCameraPreset(e.target.value));
+$('render-quality').addEventListener('change',e=>world?.setQuality(e.target.value));
+$('retry-renderer').addEventListener('click',async()=>{if(busy)return;$('retry-renderer').disabled=true;await world?.retry();render();});
+$('focus-stage').addEventListener('click',()=>toggleFocus());
+$('close-selection').addEventListener('click',()=>{selection=null;renderSelection();$('inspect-object')?.focus({preventScroll:true});});
 const zoomButton=document.createElement('button');zoomButton.id='zoom-graph';zoomButton.className='icon-button';zoomButton.setAttribute('aria-label','Развернуть исполнение в пространственный граф всех состояний');zoomButton.setAttribute('aria-pressed','false');zoomButton.title='Семантический масштаб: все состояния';zoomButton.textContent='◎';$('reset-camera').before(zoomButton);zoomButton.addEventListener('click',()=>{graphMode=!graphMode;render();});
 $('back').addEventListener('click',()=>{stop();if(controller.cursor)controller.seek(controller.cursor-1);render();});
 $('rewind').addEventListener('click',()=>{stop();controller.seek(0);render();});
@@ -290,16 +364,19 @@ $('open-source').addEventListener('click',showSource);$('open-about').addEventLi
 $('detail-dialog').addEventListener('click',e=>{if(e.target===$('detail-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeDialog();}});
 $('export-button').addEventListener('click',exportData);$('import-button').addEventListener('click',()=>$('import-file').click());$('import-file').addEventListener('change',e=>importData(e.target.files[0]));
 document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&focusMode&&!$('detail-dialog').open){e.preventDefault();toggleFocus(false);return;}
  if($('detail-dialog').open||e.ctrlKey||e.metaKey||e.altKey||e.target.closest('input,select,textarea,button,a,summary,[role="button"]')||!controller||busy)return;
  if(e.key==='1'||e.key==='2'){e.preventDefault();act(Number(e.key)-1);}if(e.key==='ArrowLeft'){e.preventDefault();$('back').click();}if(e.key==='ArrowRight'){e.preventDefault();$('next').click();}if(e.key===' '){e.preventDefault();togglePlay();}if(e.key.toLowerCase()==='r'){e.preventDefault();$('rewind').click();}
 });
 window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)));document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();if(busy)job?.abort();world?.setPaused(true);}else if(!busy)world?.setPaused(false);});
-window.addEventListener('pagehide',()=>{stop();job?.abort();world?.dispose();});
+window.addEventListener('pagehide',event=>{stop();job?.abort();if(event.persisted)world?.setPaused(true);else world?.dispose();});
+window.addEventListener('pageshow',event=>{if(event.persisted&&!document.hidden){world?.setPaused(false);render();}});
 
 navigate(SCENES.some(s=>s.id===location.hash.slice(1))?location.hash.slice(1):'deadlock');
 try{
  const {TheatreRenderer}=await import('./renderer.js');
- world=new TheatreRenderer({canvas:$('world'),labels:$('world-labels'),onAction:act,onNode:graphSelect,onBackend:label=>{backendLabel=label;$('renderer-label').textContent=label;if(label.startsWith('Ошибка'))setTimeout(render,0);}});
+ world=new TheatreRenderer({canvas:$('world'),labels:$('world-labels'),onAction:act,onNode:graphSelect,onInspect:selectObject,onStateChange:updateRenderState,onBackend:label=>{backendLabel=label;$('renderer-label').textContent=label;}});
+ world.setPaused(busy||document.hidden);
  await world.init();render();
-}catch(error){backendLabel='2D / текст';console.warn('3D renderer unavailable; accessible views remain active.',error);render();}
+}catch(error){backendLabel='2D / текст';renderState='unavailable';console.warn('3D renderer unavailable; accessible views remain active.',error);render();}
 probeGPU().then(info=>{gpuInfo=info;if(scene.id==='gpu'&&!busy)renderInspector();}).catch(()=>{});

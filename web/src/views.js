@@ -99,7 +99,7 @@ export function renderSpatialFallback(scene, state, options = {}) {
     drawing += svgText(380,42,statusText(deadlockStatus(state)),{anchor:'middle',size:17,fill:deadlockStatus(state)==='deadlock'?'var(--red)':'var(--text)',family:'var(--serif)'});
     for (let resource = 0; resource < 2; resource++) {
       const owner = state.owners[resource];
-      if (owner !== null) drawing += diagramArrow(`M${actorX[owner]+108},250 Q${actorX[owner]+108},213 ${lockX[resource]+51},181`,prefix,owner===0?'t0':'t1','ownership');
+      if (owner !== null) drawing += diagramArrow(`M${lockX[resource]+51},181 Q${actorX[owner]+108},213 ${actorX[owner]+108},250`,prefix,owner===0?'t0':'t1','ownership');
     }
     for (let thread = 0; thread < 2; thread++) {
       const first = state.ordered || thread===0 ? 0 : 1;
