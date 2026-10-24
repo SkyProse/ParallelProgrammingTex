@@ -1,7 +1,7 @@
 import * as THREE from 'three/webgpu';
 import {uniform,color,normalView,positionViewDirection} from 'three/tsl';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {QualityPolicy,ResourcePool,inspectGPUCell} from './rendering/policy.js';
+import {QualityPolicy,ResourcePool,inspectGPUCell,layoutLabels} from './rendering/policy.js';
 
 const COLORS={cyan:0x6ed7ef,amber:0xffc17a,mint:0xa7efc5,red:0xff8e91,slate:0x526f80,white:0xe8f4ef};
 const THREADS=[COLORS.cyan,COLORS.amber];
@@ -273,10 +273,22 @@ export class TheatreRenderer {
 
   positionLabels(){
     const {width,height}=this.canvas.getBoundingClientRect();
-    for(const item of this.labelPoints){
+    const candidates=[];
+    // Reset display before measuring: a label hidden in the previous camera
+    // frame must regain its real DOM extents before it can become visible.
+    for(const item of this.labelPoints){item.el.style.display='';item.el.style.visibility='hidden';}
+    for(const [id,item] of this.labelPoints.entries()){
       const p=item.position.clone().project(this.camera);
-      item.el.style.left=`${(p.x*.5+.5)*width}px`;item.el.style.top=`${(-p.y*.5+.5)*height}px`;
-      item.el.style.display=p.z>1||p.z< -1||Math.abs(p.x)>1.08||Math.abs(p.y)>1.08?'none':'';
+      if(p.z>1||p.z< -1||Math.abs(p.x)>1.08||Math.abs(p.y)>1.08)continue;
+      const box=item.el.getBoundingClientRect?.();
+      if(!box)continue;
+      candidates.push({id,x:(p.x*.5+.5)*width,y:(-p.y*.5+.5)*height,width:box.width,height:box.height,priority:item.priority});
+    }
+    const positions=new Map(layoutLabels(candidates,{width,height:Math.max(0,height-28)}).map(item=>[item.id,item]));
+    for(const [id,item] of this.labelPoints.entries()){
+      const position=positions.get(id);
+      item.el.style.display=position?.visible?'':'none';item.el.style.visibility='';
+      if(position?.visible){item.el.style.left=`${position.x}px`;item.el.style.top=`${position.y}px`;}
     }
   }
   clear(){
@@ -294,7 +306,7 @@ export class TheatreRenderer {
     });
   }
   mesh(geometry,tint,position,glow=.08){const mesh=new THREE.Mesh(geometry,this.material(tint,glow));mesh.position.copy(position);this.group.add(mesh);return mesh;}
-  label(text,position,cls=''){const el=document.createElement('span');el.className=`world-label ${cls}`;el.textContent=text;this.labelsEl.append(el);this.labelPoints.push({el,position});}
+  label(text,position,cls=''){const el=document.createElement('span');el.className=`world-label ${cls}`;el.textContent=text;this.labelsEl.append(el);this.labelPoints.push({el,position,priority:cls.includes('strong')?2:cls.includes('field')?1:0});}
   line(points,tint,radius=.016,dashed=false){
     const curve=new THREE.CatmullRomCurve3(points);
     const key=points.map(p=>p.toArray().join(',')).join('|');
@@ -380,7 +392,7 @@ export class TheatreRenderer {
    const cube=this.mesh(this.geometry('BoxGeometry',.48,.32,.55),tint,position,.12);
    cube.userData.inspect={type:'memory',provenance:'model',index:object.index,field:object.field,address:object.address,line:object.line,lineSize:s.config.lineSize,owner:owner??null};
    this.picks.push(cube);
-   this.label(`${object.field}${object.index}`,position.clone().add(V(0,.38,0)),object.field==='a'?'cyan':'amber');
+   this.label(`${object.field}${object.index}`,position.clone().add(V(0,.38,0)),object.field==='a'?'field cyan':'field amber');
    this.label(`+${object.address} · L${object.line}`,position.clone().add(V(0,-.22,.13)));
   });
   if(last){const i=objects.findIndex(o=>o.index===last.index&&o.field===last.field);const p=locations[i].clone().add(V(0,.4,0)),actor=V(last.thread?2.8:-2.8,.65,-1.8);this.arrow(last.op==='read'?p:actor,last.op==='read'?actor:p,THREADS[last.thread],false,true);}
@@ -395,9 +407,9 @@ export class TheatreRenderer {
  }
  gpu(result){
   const data=result?.status==='ok'?result.values:null;const count=Math.min(data?.length??256,4096);const cols=Math.ceil(Math.sqrt(count));
-  const geometry=this.geometry('BoxGeometry',.82,.5,.82);const material=this.material(COLORS.mint,.2);const mesh=new THREE.InstancedMesh(geometry,material,count);const dummy=new THREE.Object3D();const palette=[COLORS.cyan,COLORS.amber,COLORS.mint,0xb2a2ef,0xe1a6c2,0x85cbd0];const scale=7/cols;
+  const geometry=this.geometry('BoxGeometry',.82,.5,.82);const material=this.material(0xffffff,.035);const mesh=new THREE.InstancedMesh(geometry,material,count);const dummy=new THREE.Object3D();const palette=[0x58c4e8,0xffb866,0x80d6b1,0xb298f0,0xe18cae,0x54bfc2];const scale=7/cols;
   for(let i=0;i<count;i++){dummy.position.set((i%cols-(cols-1)/2)*scale,-.05+(data?((data[i].workgroupId%3)*.08):0),(Math.floor(i/cols)-(cols-1)/2)*scale);dummy.scale.set(scale,scale,scale);dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);mesh.setColorAt(i,new THREE.Color(data?palette[data[i].workgroupId%palette.length]:0x41606b));}
-  mesh.instanceMatrix.needsUpdate=true;mesh.userData.gpu=true;this.group.add(mesh);this.picks.push(mesh);
+  mesh.instanceMatrix.needsUpdate=true;mesh.instanceColor.needsUpdate=true;mesh.userData.gpu=true;this.group.add(mesh);this.picks.push(mesh);
   this.label(data?`${count}${count<data.length?' / '+data.length:''} ВЫЗОВОВ · ${result.workgroups.length} ГРУПП ВСЕГО`:'ПРОСТРАНСТВО GPU-ВЫЗОВОВ',V(0,1.9,0),'strong mint');
   this.label(data?(result.kind==='imported-gpu'?'ИМПОРТ · СТРУКТУРА ПРОВЕРЕНА':'ДАННЫЕ ПРОЧИТАНЫ С GPU'):'РАСКЛАДКА ДО ЗАПУСКА · ЕЩЁ НЕ РЕЗУЛЬТАТ',V(0,-.3,4));
   if(data){const seen=new Set();for(let i=0;i<count;i++){const g=data[i].workgroupId;if(!seen.has(g)&&seen.size<12){seen.add(g);this.label(`WG ${g}`,V((i%cols-(cols-1)/2)*scale,.42,(Math.floor(i/cols)-(cols-1)/2)*scale));}}}

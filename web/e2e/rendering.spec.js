@@ -1,5 +1,18 @@
 import {test,expect} from '@playwright/test';
 
+const graphicsErrors=new WeakMap();
+test.beforeEach(async({page})=>{
+ const errors=[];graphicsErrors.set(page,errors);
+ page.on('pageerror',error=>errors.push(error.message));
+ page.on('console',message=>{
+  if(message.type()==='error'&&/shader|program|compil|THREE|GL_INVALID|validation/i.test(message.text()))errors.push(message.text());
+ });
+});
+test.afterEach(async({page})=>{
+ // A visible canvas alone does not prove that its shader pipeline compiled.
+ expect(graphicsErrors.get(page)??[]).toEqual([]);
+});
+
 async function diagnostics(page){
  return page.evaluate(async()=>{
   const {getRuntimeDiagnostics}=await import('/src/app.js');
@@ -13,6 +26,38 @@ async function readyWebGL(page,hash='deadlock'){
  await expect(page.locator('#world')).toBeVisible();
  await expect.poll(async()=>(await diagnostics(page)).renderer?.status).toBe('ready');
 }
+
+async function labelCollisions(page){
+ return page.evaluate(()=>{
+  const viewport=document.querySelector('#viewport').getBoundingClientRect();
+  const labels=[...document.querySelectorAll('#world-labels .world-label')].filter(el=>getComputedStyle(el).display!=='none').map(el=>({text:el.textContent,rect:el.getBoundingClientRect()})).filter(x=>x.rect.width>0&&x.rect.height>0);
+  const issues=[];
+  for(let i=0;i<labels.length;i++){
+   const a=labels[i];
+   if(a.rect.left<viewport.left||a.rect.right>viewport.right||a.rect.top<viewport.top||a.rect.bottom>viewport.bottom)issues.push(`outside: ${a.text}`);
+   for(const b of labels.slice(i+1)){
+    const width=Math.min(a.rect.right,b.rect.right)-Math.max(a.rect.left,b.rect.left);
+    const height=Math.min(a.rect.bottom,b.rect.bottom)-Math.max(a.rect.top,b.rect.top);
+    if(width>1&&height>1)issues.push(`${a.text} overlaps ${b.text}`);
+   }
+  }
+  return {count:labels.length,issues};
+ });
+}
+
+test('spatial labels remain readable and inside the stage across dense scenes',async({page})=>{
+ await readyWebGL(page);
+ await expect.poll(async()=>(await labelCollisions(page)).issues).toEqual([]);
+ expect((await labelCollisions(page)).count).toBeGreaterThan(2);
+ await page.locator('#zoom-graph').click();
+ await expect.poll(async()=>(await labelCollisions(page)).issues).toEqual([]);
+ await page.locator('[data-scene="memory"]').click();
+ await expect.poll(async()=>(await labelCollisions(page)).issues).toEqual([]);
+ expect((await labelCollisions(page)).count).toBeGreaterThan(2);
+ await page.locator('#inspect-address').selectOption('1');await page.locator('#inspect-object').click();
+ await expect(page.locator('#selection-card')).toContainText('b[0]');
+ await page.screenshot({path:test.info().outputPath('memory-inspection-readable.png'),fullPage:true});
+});
 
 test('real WebGL context loss preserves a live model and restores the latest state',async({page})=>{
  const errors=[];
@@ -125,6 +170,7 @@ test('an imported GPU mapping stays labelled as imported and supports the last i
  // individual draw calls. The generous ceiling allows the theatre set too.
  expect(state.renderer.drawCalls).toBeGreaterThan(0);
  expect(state.renderer.drawCalls).toBeLessThan(100);
+ await expect.poll(async()=>(await labelCollisions(page)).issues).toEqual([]);
  await test.info().attach('render-diagnostics',{body:JSON.stringify(state,null,2),contentType:'application/json'});
  await page.screenshot({path:test.info().outputPath('gpu-invocation-inspection.png'),fullPage:true});
 });

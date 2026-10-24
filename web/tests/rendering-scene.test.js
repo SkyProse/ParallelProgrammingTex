@@ -52,3 +52,27 @@ test('graph rendering marks the actual schedule path without advancing the snaps
   assert.ok(world.group.children.some(o=>o.userData.schedulePath));
  }finally{await world.dispose();restore();}
 });
+
+test('GPU instances use a neutral material and upload the per-instance colour buffer',async()=>{
+ const {world,restore}=renderer();
+ try{
+  world.update('gpu',null);
+  const mesh=world.group.children.find(o=>o.isInstancedMesh);
+  assert.equal(mesh.material.color.getHex(),0xffffff);
+  assert.ok(mesh.instanceColor.version>0);
+ }finally{await world.dispose();restore();}
+});
+
+test('a collision-hidden DOM label is measured again and reappears when the camera separates anchors',async()=>{
+ const {world,restore}=renderer();
+ try{
+  world.canvas.getBoundingClientRect=()=>({width:200,height:120});
+  const label=(priority,p)=>({priority,position:{clone:()=>({project:()=>p})},el:{style:{},getBoundingClientRect(){return {width:this.style.display==='none'?0:80,height:12};}}});
+  const first=label(2,{x:0,y:0,z:0}),anchor={x:0,y:0,z:0},second=label(0,anchor);
+  world.labelPoints=[first,second];world.positionLabels();
+  assert.equal(first.el.style.display,'');assert.equal(second.el.style.display,'none');
+  anchor.y=.8;world.positionLabels();
+  assert.equal(second.el.style.display,'');
+  assert.ok(Number.parseFloat(second.el.style.top)>=18);
+ }finally{await world.dispose();restore();}
+});

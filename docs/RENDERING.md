@@ -17,6 +17,12 @@ derived from model events, not from camera animation. Ownership arrows point
 from lock to holder in both WebGL and SVG; waiting arrows point from thread to
 lock. The arrow directions therefore show the same directed cycle in a deadlock.
 
+Projected DOM labels use their measured text bounds. Primary labels take
+precedence and may move a short distance vertically; secondary labels are
+hidden when they would overlap. A viewport margin keeps text inside the
+stage. Hidden labels are measured again after camera changes. The accessible
+inspector retains the complete data independently of these visual decisions.
+
 Camera presets, quality controls, object inspection and the expanded laboratory
 layout do not change model state or advance time. Reduced-motion changes are
 observed at runtime. Rendering uses request-on-change scheduling and stops when
@@ -52,7 +58,8 @@ the same attributes and reinstalls the renderer's listeners. This also avoids
 trying to bind two different context types to one canvas. A new renderer reads
 the most recent model snapshot after recovery. WebGPU device loss uses the
 same lifecycle and retry path; unavailable adapters leave the accessible view
-in place.
+in place. One automatic WebGPU recovery is allowed; a second immediate loss
+waits for explicit user retry instead of repeatedly creating devices.
 
 An initialization generation guard prevents a disposed renderer from being
 resurrected by a late promise. Final disposal removes pointer/media listeners,

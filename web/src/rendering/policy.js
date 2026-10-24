@@ -70,3 +70,22 @@ export function inspectGPUCell(result,index){
   if(!value)return null;
   return {type:'gpu',provenance:result.kind==='imported-gpu'?'imported':'measured',...value};
 }
+
+/** Screen-space label layout. Strong labels may move slightly; details yield. */
+export function layoutLabels(labels,{width,height,margin=12,gap=4}={}){
+  const placed=[],result=labels.map(({id})=>({id,visible:false}));
+  const ordered=labels.map((label,index)=>({...label,index})).sort((a,b)=>(b.priority??0)-(a.priority??0)||a.index-b.index);
+  for(const label of ordered){
+    if(![label.x,label.y,label.width,label.height].every(Number.isFinite)||label.width<=0||label.height<=0)continue;
+    if(label.width>width-2*margin||label.height>height-2*margin)continue;
+    const offsets=(label.priority??0)>0?[0,-14,14,-28,28]:[0];
+    for(const offset of offsets){
+      const x=Math.min(width-margin-label.width/2,Math.max(margin+label.width/2,label.x));
+      const y=Math.min(height-margin-label.height/2,Math.max(margin+label.height/2,label.y+offset));
+      const rectangle={id:label.id,visible:true,x,y,left:x-label.width/2,right:x+label.width/2,top:y-label.height/2,bottom:y+label.height/2};
+      if(placed.some(other=>!(rectangle.right+gap<=other.left||other.right+gap<=rectangle.left||rectangle.bottom+gap<=other.top||other.bottom+gap<=rectangle.top)))continue;
+      placed.push(rectangle);result[label.index]=rectangle;break;
+    }
+  }
+  return result;
+}

@@ -41,6 +41,8 @@
 .experiment.is-focused .renderer-label{max-width:none}
 .experiment.is-focused .stage-toolbar{padding-left:20px;padding-right:20px}
 .stage-caption{max-width:calc(100% - 32px);line-height:1.55}
+.skip-link{top:10px;transform:translateY(-150%);opacity:0;pointer-events:none}
+.skip-link:focus{transform:none;opacity:1;pointer-events:auto}
 @media(max-width:1180px){.scene-tools-hint{display:none}.stage-legend{display:none}}
 @media(max-width:650px){
  .stage-toolbar{gap:3px;padding-left:10px;padding-right:10px}.view-tabs{gap:12px}.renderer-label{max-width:72px}
@@ -50,5 +52,6 @@
  .focus-mode main{padding:8px}.experiment.is-focused .viewport{height:52dvh;min-height:300px}
  .experiment.is-focused .stage-toolbar{padding:5px 10px}.experiment.is-focused .renderer-label{max-width:72px}
  .top-actions{gap:8px}.book-button{max-width:110px}.breadcrumb{white-space:normal}
+ .viewport:has(#alternative-view.spatial-mode:not([hidden])),.experiment.is-focused .viewport:has(#alternative-view.spatial-mode:not([hidden])){height:280px;min-height:280px}
 }
 [hidden]{display:none!important}
