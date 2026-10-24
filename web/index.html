@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10171e">
+  <meta name="description" content="Остановите время. Выберите следующий поток. Увидьте, почему параллельная программа ломается — и докажите, что ваше исправление работает.">
+  <title>Concurrency Theatre — лаборатория параллельного мира</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./src/style.css">
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.webgpu.js","three/webgpu":"./vendor/three/three.webgpu.js","three/tsl":"./vendor/three/three.tsl.js","three/addons/controls/OrbitControls.js":"./vendor/three/OrbitControls.js"}}</script>
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#scene-title">Перейти к эксперименту</a>
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Лаборатории">
+    <a class="brand" href="#deadlock" aria-label="Concurrency Theatre, первая лаборатория"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M10 6v9c0 6 20 1 20 10v9M30 6v8c0 6-20 2-20 11v9"/><circle cx="10" cy="6" r="3"/><circle cx="30" cy="34" r="3"/></svg><span>Concurrency<br><strong>Theatre<span class="brand-dot">.</span></strong></span></a>
+    <div class="side-kicker">УЧЕБНИК, КОТОРЫМ МОЖНО УПРАВЛЯТЬ</div>
+    <nav id="scene-nav" aria-label="Выбор лаборатории"></nav>
+    <div class="side-bottom"><div class="progress-caption"><span>Ваш маршрут</span><span id="progress-count">0 / 6</span></div><div class="progress-track"><i id="progress-bar"></i></div><p>Предскажите. Вмешайтесь.<br>Объясните результат.</p><button class="text-button" id="open-about">Об учебнике и проекте ↗</button><span class="edition">PARALLELPROGRAMMINGTEX · 2026</span></div>
+  </aside>
+  <main id="main-content">
+    <header class="topbar"><div class="breadcrumb">ЛАБОРАТОРИЯ <span>/</span> <b id="scene-breadcrumb">01</b></div><div class="top-actions"><button class="quiet-button" id="import-button" title="Импорт записи модели или отчёта измерений">↥ Импорт</button><button class="quiet-button" id="export-button">↧ Экспорт</button><button class="book-button" id="open-source">Открыть учебник <span>↗</span></button></div></header>
+    <section class="scene-heading" aria-labelledby="scene-title"><div class="heading-copy"><div class="eyebrow"><span id="scene-number">ЭКСПЕРИМЕНТ 01</span><span class="data-tag" id="data-kind">МОДЕЛЬ</span></div><h1 id="scene-title" tabindex="-1">Развилка времени<span>.</span></h1><p id="scene-summary">Одна программа. Несколько будущих. Какое выберете вы?</p></div><div class="heading-mark" aria-hidden="true">∥</div></section>
+    <section class="experiment" aria-label="Интерактивный эксперимент">
+      <div id="configuration" class="configuration"></div>
+      <div class="workspace">
+        <div class="stage-shell">
+          <div class="stage-toolbar"><div class="view-tabs" role="group" aria-label="Представление состояния"><button data-view="space" class="active" aria-pressed="true">Пространство</button><button data-view="score" aria-pressed="false">Партитура</button><button data-view="graph" aria-pressed="false">Все будущие</button></div><span id="renderer-label" class="renderer-label">Инициализация…</span><button id="reset-camera" class="icon-button" aria-label="Вернуть камеру">⌖</button></div>
+          <div class="viewport" id="viewport"><canvas id="world" aria-label="Пространственная иллюстрация текущего состояния; все действия доступны в панели потоков"></canvas><div id="world-labels" aria-hidden="true"></div><div id="alternative-view" hidden></div><div class="stage-caption" id="stage-caption"><span class="live-dot"></span><span id="stage-hint">Вы управляете расписанием</span></div><div class="stage-legend" id="stage-legend"><span><i class="cyan"></i>T0</span><span><i class="amber"></i>T1</span><span><i class="mint"></i>Ресурс</span></div></div>
+          <div id="transport" class="transport"><button id="rewind" class="icon-button" aria-label="В начало">↤</button><button id="back" class="icon-button" aria-label="На шаг назад">←</button><button id="play" class="play-button" aria-label="Запустить автоматическое расписание">▶</button><button id="next" class="icon-button" aria-label="Следующий допустимый шаг">→</button><label class="timeline"><span class="sr-only">Логическое время</span><input id="timeline" type="range" min="0" max="0" value="0"></label><output id="step-count">0 / 0</output><span class="time-unit">СОБЫТИЯ</span></div>
+          <div class="event-caption" id="event-caption" role="status" aria-live="polite">Программа готова. Выберите поток.</div>
+        </div>
+        <aside id="inspector" class="inspector" aria-label="Управление потоками и состояние"></aside>
+      </div>
+      <div class="branch-bar" id="branch-bar"><div class="branch-title"><span class="branch-icon">⑂</span><div><strong>У времени есть варианты</strong><small id="branch-description">Запомните исполнение и попробуйте другое решение.</small></div></div><div class="branch-actions"><button id="save-branch" class="secondary-button">Запомнить ветку</button><button id="compare-branch" class="secondary-button" disabled>Сравнить</button><button id="reset-scene" class="text-button">Сначала ↺</button></div></div>
+      <div id="comparison" class="comparison" hidden></div>
+    </section>
+    <div id="metrics" class="metrics"></div>
+    <section class="learning-grid"><article class="understanding"><div class="section-kicker">ЧТО ЗДЕСЬ ПРОИСХОДИТ</div><h2 id="lesson-question">Почему потоки остановились?</h2><p id="lesson-text"></p><details id="scope-details"><summary>Границы этого эксперимента</summary><p id="model-scope"></p></details><div class="source-footnote" id="source-footnote"></div></article><article class="challenge" id="challenge"></article></section>
+    <footer class="page-footer"><span>Из абстракции — в действие.</span><span id="footer-scope">Логические события · не время процессора</span><button id="open-capabilities" class="text-button">Возможности устройства ↗</button></footer>
+  </main>
+</div>
+<dialog id="detail-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><span class="section-kicker">CONCURRENCY THEATRE</span><button id="close-dialog" class="icon-button" aria-label="Закрыть">×</button></div><h2 id="dialog-title"></h2><div id="dialog-content"></div></dialog>
+<input type="file" id="import-file" accept="application/json,.json" hidden>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p class="noscript">Для запуска лабораторий нужен JavaScript. Исходный учебник доступен в <a href="https://github.com/SkyProse/ParallelProgrammingTex">репозитории ParallelProgrammingTex</a>.</p></noscript>
+</body>
+</html>
