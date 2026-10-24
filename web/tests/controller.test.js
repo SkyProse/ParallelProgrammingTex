@@ -49,6 +49,27 @@ test('automatic memory index follows each actor after uneven manual steps',()=>{
  const next=c.state.events.at(-1);
  assert.equal(next.index,before.filter(e=>e.thread===next.thread).length%4);
 });
+test('memory intervention forks explicitly while ordinary forward playback preserves the recorded future',()=>{
+ const c=new Controller('memory',{layout:'aos',count:4,lineSize:64,padding:0});
+ for(let i=0;i<4;i++)c.autoStep();
+ const saved=c.snapshot();
+ c.seek(0);
+ c.autoStep({memoryMode:'readonly'});
+ assert.equal(c.state.events.at(-1).op,'write','ordinary playback must replay the recorded action');
+ c.seek(0);
+ const current=c.state;
+ assert.equal(c.discardFuture(),true);
+ assert.equal(c.state,current,'an intervention changes the future, not the current state');
+ assert.deepEqual(c.actions,[]);
+ assert.equal(c.states.length,1);
+ assert.equal(c.discardFuture(),false);
+ c.autoStep({memoryMode:'readonly'});
+ assert.equal(c.state.events.at(-1).op,'read');
+ assert.equal(c.state.metrics.invalidations,0);
+ assert.equal(c.actions.length,1);
+ assert.equal(saved.actions.length,4);
+ assert.ok(saved.state.events.every(event=>event.op==='write'));
+});
 test('failed replay import is atomic and every graph selection reconstructs its displayed state',()=>{
  const c=new Controller('deadlock',{ordered:false});c.step(0);
  const before=c.snapshot();

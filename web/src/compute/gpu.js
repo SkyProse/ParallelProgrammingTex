@@ -70,8 +70,16 @@ async function acquire(requiredFeatures, signal) {
   const requested = typeof requiredFeatures === 'function' ? requiredFeatures(adapter, gpu) : requiredFeatures;
   for (const name of requested) if (!adapter.features.has(name)) throw new UnsupportedError(`Required GPU feature is unavailable: ${name}`);
   const pending = adapter.requestDevice({ requiredFeatures: requested });
-  pending.then(device => { if (signal?.aborted) device.destroy(); }, () => {});
-  const device = await observed(pending, { signal });
+  let device;
+  try {
+    device = await observed(pending, { signal });
+    throwIfAborted(signal);
+  } catch (error) {
+    // requestDevice cannot be cancelled. A timeout/abort can finish before its
+    // promise, so release any late device instead of abandoning its resources.
+    pending.then(lateDevice => lateDevice.destroy(), () => {});
+    throw error;
+  }
   return { device, adapter, gpu, description: describeAdapter(adapter, gpu) };
 }
 

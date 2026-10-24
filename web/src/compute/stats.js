@@ -73,6 +73,7 @@ function validateSummary(summary, samples) {
 /** Validate structure and internal consistency; imported measurements are still user-supplied evidence. */
 export function validateBenchmarkDocument(document) {
   if (!document || document.schemaVersion !== 1 || document.kind !== 'measured') throw new TypeError('Unsupported measurement schema');
+  if (![KERNEL_ID, 'native-false-sharing'].includes(document.experiment)) throw new TypeError('Unknown measurement experiment; expected u32-mix-reduce-v1 or native-false-sharing');
   if (!['browser', 'native'].includes(document.environment?.execution)) throw new TypeError('Measurement execution origin is required');
   if (typeof document.createdAt !== 'string' || !Number.isFinite(Date.parse(document.createdAt))) throw new TypeError('Measurement creation date is invalid');
   if (!Array.isArray(document.rows) || document.rows.length < 1 || document.rows.length > 64) throw new RangeError('Measurement rows must contain 1–64 entries');

@@ -1,6 +1,6 @@
 {
   "name": "concurrency-theatre",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "description": "Executable companion to ParallelProgrammingTex: deterministic concurrency laboratories and measured browser experiments.",

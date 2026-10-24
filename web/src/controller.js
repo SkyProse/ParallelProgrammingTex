@@ -26,6 +26,13 @@ export class Controller {
   this.actions.push(structuredClone(action));this.states.push(next);this.cursor++;
   return true;
  }
+ /** Explicit intervention: retain the current snapshot and discard only its recorded future. */
+ discardFuture(){
+  if(this.cursor===this.actions.length)return false;
+  this.actions=this.actions.slice(0,this.cursor);
+  this.states=this.states.slice(0,this.cursor+1);
+  return true;
+ }
  autoStep({memoryMode='separate'}={}){
   if(this.cursor<this.actions.length){this.seek(this.cursor+1);return true;}
   if(this.scene==='memory'){

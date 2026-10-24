@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runBenchmark } from '../src/compute/benchmark.js';
 import { validateBenchmarkDocument } from '../src/compute/stats.js';
-import { probeGPU, buildLoomShader, validateLoomOptions, decodeLoomMapping } from '../src/compute/gpu.js';
+import { probeGPU, buildLoomShader, validateLoomOptions, decodeLoomMapping, runGPULoom } from '../src/compute/gpu.js';
 
 test('real JS benchmark produces checked observations with cold/warm separation', async () => {
   const progress = [];
@@ -80,4 +80,36 @@ test('measured loom decoding validates output and never invents subgroup IDs', (
   assert.equal(result.values[0].subgroupId, undefined);
   raw[6] = 0;
   assert.throws(() => decodeLoomMapping(raw, { count: 2, workgroupSize: 1 }), /correctness/);
+});
+
+test('timed-out GPU acquisition destroys a device that resolves after the operation ended', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const descriptor = Object.getOwnPropertyDescriptor(navigator, 'gpu');
+  let finishDevice, requested;
+  const deviceRequested = new Promise(resolve => { requested = resolve; });
+  const gpu = {
+    wgslLanguageFeatures: new Set(),
+    requestAdapter: async () => ({
+      features: new Set(), limits: {},
+      requestDevice() { return new Promise(resolve => { finishDevice = resolve; requested(); }); }
+    })
+  };
+  Object.defineProperty(navigator, 'gpu', { value: gpu, configurable: true });
+  try {
+    const operation = runGPULoom({ count: 1, workgroupSize: 1 });
+    await deviceRequested;
+    t.mock.timers.tick(15001);
+    const result = await operation;
+    assert.equal(result.status, 'error');
+    assert.match(result.reason, /15 second/);
+    assert.deepEqual(result.values, []);
+    let destroyed = 0;
+    finishDevice({ destroy() { destroyed++; } });
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(destroyed, 1, 'a late device must not leak after a timeout');
+  } finally {
+    if (descriptor) Object.defineProperty(navigator, 'gpu', descriptor);
+    else delete navigator.gpu;
+  }
 });

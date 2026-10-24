@@ -140,6 +140,17 @@ test('SVG fallback draws exactly the actual ownership/wait edges and occupied ca
   }
 });
 
+test('ownership arrows run from resources to holders while waiting arrows run from threads to resources',()=>{
+  const state=stepDeadlock(stepDeadlock(createDeadlock(),0),1);
+  const svg=viewFunctions.renderSpatialFallback('deadlock',state);
+  const edges=[...svg.matchAll(/data-edge="(ownership|wait)" d="([^"]+)"/g)];
+  for(const [,kind,path] of edges){
+    const points=[...path.matchAll(/(-?\d+),(-?\d+)/g)].map(m=>[Number(m[1]),Number(m[2])]);
+    const start=points[0][1],end=points.at(-1)[1];
+    assert.ok(kind==='ownership'?start<end:start>end,`${kind} must use the same direction in SVG and WebGL`);
+  }
+});
+
 test('native false-sharing rows retain layout, stride, per-thread units and imported provenance', () => {
   const native = layout => row({backend:'native-false-sharing',size:1000,layout:{name:layout,strideBytes:layout==='packed'?8:64},correctness:{verified:true,checks:4,counters:[1000,1000],expectedPerCounter:1000}});
   const html=renderMeasurements({kind:'imported',experiment:'native-false-sharing',environment:{execution:'native'},rows:[native('packed'),native('padded')]});
