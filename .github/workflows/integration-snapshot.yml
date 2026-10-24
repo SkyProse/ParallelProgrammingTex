@@ -1,0 +1,39 @@
+name: Integration source snapshot
+on:
+  push:
+    branches: [integration/upstreams-and-theatre-2026]
+    paths: [.github/workflows/integration-snapshot.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch exact historical upstream revisions
+        run: |
+          git fetch https://github.com/s70c3/ParallelProgrammingTexEn.git 9e68958eb5885e0ad8e948570d49e096ad2366ee:refs/remotes/upstream-en/master
+          git fetch https://github.com/shilko2013/ParallelProgrammingTex.git 53535f92db505a5d0442dca5a3918fe3ea78189a:refs/remotes/upstream-ru/master
+          mkdir -p export
+          git bundle create export/parallel-sources.bundle --all
+          git bundle verify export/parallel-sources.bundle
+          git for-each-ref --format='%(objectname) %(refname)' > export/refs.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install locked build dependencies without lifecycle scripts
+        working-directory: web
+        run: npm ci --ignore-scripts
+      - name: Export locked dependencies for offline verification
+        run: tar -czf export/web-dependencies.tar.gz -C web node_modules
+      - name: Preserve integration audit inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-audit-inputs
+          path: export/
+          retention-days: 14
