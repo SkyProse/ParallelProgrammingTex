@@ -1,0 +1,29 @@
+# Concurrency Theatre implementation contracts
+
+All source uses plain browser ES modules. Node 22+ built-in `node:test` runs pure model tests. Write and execute failing tests before implementing behavior. Each model is deterministic, immutable and independent of rendering and wall-clock time.
+
+## Core (core agent owns src/core and tests/core*.test.js)
+
+`deadlock.js`: `createDeadlock({ordered=false}={})`, `stepDeadlock(state, thread)` (blocked actions return the unchanged state), `enabledDeadlock(state)` array of thread indices, `deadlockStatus(state)` = 'running'|'deadlock'|'complete', `exploreDeadlock({ordered=false}={})` returns `{nodes,edges,deadlocks,completed,witness}`. State `{kind:'deadlock',ordered,pcs:[0,0],owners:[null,null],events:[]}`. Events `{thread,op,resource?,label}`. Five instructions per thread take first, take second, work, release second, release first. Nodes `{id,state,depth,status}`, edges `{from,to,thread}`, deadlocks/completed are node id arrays; witness is an array of actor indices, shortest deadlock schedule. IDs deterministic strings. `deadlockProgram(state,thread)` returns display strings.
+
+`race.js`: `createRace({mode='unsafe'}={})` modes unsafe, atomic, snapshot. `stepRace(state,thread)`, `enabledRace(state)`, `raceStatus(state)`; expose state `{kind:'race',mode,value,locals:[null,null],pcs:[0,0],events,contract}`. Unsafe is explicitly an SC educational read/increment/write model of two increments, not C++ UB outcomes. Atomic increments once per actor; snapshot separates reading from shared concurrent writes, has a different contract. Export `raceProgram(state,thread)` display strings. `exploreRace(mode)` returns reachable final values and witness for lost update.
+
+`cache.js`: `createCache({layout='aos',lineSize=64,count=8,padding=0}={})`, `cacheAccess(state,{thread,index,field,write=true})` new state. `cacheLayout(config)` -> `{bytes,objects:[{index,field,address,line}],lines}`; layouts aos, soa, padded. Separate arrays aligned to line boundaries in soa, lineSize selectable. State events and metrics `{accesses,invalidations,transfers,trueSharing,falseSharing}` plus `owners`/`lines` as useful. Cache coherence is a labeled didactic model, not hardware measurement. Expose assumptions in `CACHE_MODEL_SCOPE`.
+
+`cas.js`: `createCAS({weak=false}={})`, `stepCAS(state,thread,{spurious=false}={})`, `enabledCAS(state)`, `casStatus(state)`, `casProgram(state,thread)`. Bounded append-only two-producer queue model: dummy node, initially null next; preserve enqueued nodes, retry CAS failures and update expected; expose `{kind:'cas',nodes,head,tail,threads,events}`. State action names/labels readable. Document no reclaim/dequeue/ABA proof. Export a small pure `compareExchange(actual,expected,desired,{weak=false,spurious=false}={})` -> `{success,value,expected}`.
+
+`replay.js`: generic `replay(create,step,actions,cursor=actions.length)`, `branch(actions,cursor,action)`, `compareTraces(eventsA,eventsB)` -> `{common,firstA,firstB}`. Validate cursor and action limits for import. Tests should prove original snapshots unchanged.
+
+## Compute (compute agent owns src/compute, tests/compute*.test.js, native and native tests)
+
+`stats.js`: `summarize(samples)` with mean, median, stddev, min, max, ci95 array, n. Seeded input/checksum/reference functions. `runBenchmark({sizes,repetitions=7,workers=2,signal,onProgress})` async from `benchmark.js` returns JSON schema `{schemaVersion:1,kind:'measured',createdAt,environment,rows}`. Each row includes size, backend ('js'|'workers'|'webgpu'), summary, correctness, timingScope, coldMs, samples. Kernel same uint32 integer transform/reduction across backends; input/output equality validated before comparisons. Real Worker backend, real WebGPU compute when supported. No invented numbers. Include cancellation, bounded resource limits, separated cold/warm, device loss/unsupported paths. UI pauses renderer around whole measurement.
+
+`gpu.js`: `probeGPU()` returns supported, reason, features, limits. `runGPULoom({count=256,workgroupSize=64,subgroupSize=null,signal}={})` real WebGPU invocation mapping returns `{kind:'measured',values,workgroups,subgroupSizes?,features,...}`; support feature-gated subgroup probe if available. Missing capability is explicit. Do not require experimental feature for baseline. Buffer-view/immediates/subgroup-size-control support diagnostics and optional safe demos if actually supported. DOM-in-canvas experimental capability diagnostics only unless legitimate support can be verified. Keep exact tests and native OpenMP JSON runner plus false-sharing benchmark separate from browser simulations.
+
+## Content (content agent owns src/content, tests/content*.test.js, docs, textbook changes)
+
+`curriculum.js`: export `SCENES` six entries `{id,title,eyebrow,summary,question,source:{path,label,section},scope,lesson,challenge:{prompt,options:[{id,label}],answer,explanation},transfer:{prompt,options,answer,explanation}}`, ids deadlock,race,memory,cas,gpu,benchmark. Russian polished teaching copy. `SOURCES` and `CAPABILITY_NOTES` arrays. Provide audited source links pinned to 1c53d6eb08a7d0041a6f54728b6ba90a59507454. Distinguish model, measured, imported. Include original author provenance and exact model limitations. Textbook OpenMP spec update (6.0 final/6.1 draft as of Oct 2026), preserve archival listings and attribution; add errata and new companion chapter. Test content schema, answer references and source links.
+
+## Integration owner (root)
+
+App shell, Three.js renderer with WebGPU/WebGL2 fallback, accessible 2D/text views, timeline, branching, state graph, import/export, learning progress, benchmark charts, source drawer, CSS, build, CI, browser QA, GitHub and hosted preview delivery. Only root edits package.json, index.html, src/app.js, src/renderer.js, src/style.css, scripts/build.mjs, .github and top README.

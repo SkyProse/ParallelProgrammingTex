@@ -2,26 +2,25 @@
 	\subsection{OpenMP Technology}
 	\label{OpenMP:section}
 	\par\textbf{Brief description of the technology.} The first version of the OpenMP standard appeared in 1997 with the support of the largest IT companies in the world (Intel, IBM, AMD, HP, Nvidia, etc.). The aim of the new standard was to offer a cross-platform parallelization tool that would be higher-level than the flow control APIs offered by the operating system. OpenMP is currently standardized for three programming languages: C, C ++ and Fortran.
-	\par\textbf{Compiler support} The vast majority of existing modern C / C ++ compilers support OpenMP version 2.0 (for example, both gcc and Visual Studio). However, only a few compilers support the newer version of OpenMP 4.0, therefore, when setting forth the material, the OpenMP 2.0 technology will be used as the "common denominator."\
+	\par\textbf{Compiler support (updated 24 October 2026).} OpenMP 6.0 is the latest final specification listed by the OpenMP ARB (released 14 November 2024). OpenMP 6.1 is a public comment draft, Technical Report 15 (July 2026), not a final standard at this audit date. The introductory examples below use a small, established subset; this teaching choice must not be confused with a claim that modern compilers only implement OpenMP 2.0. Check each required feature against the installed compiler version, runtime, language and target device. Official specifications and status: \url{https://www.openmp.org/specifications/}; GCC: \url{https://gcc.gnu.org/projects/gomp/}; Clang: \url{https://clang.llvm.org/docs/OpenMPSupport.html}.
 	\par OpenMP defines a set of directives to the preprocessor, which instructs the compiler to replace the source code that follows them with a parallel version using tools available to the compiler, for example, POSIX Threads on Linux or Windows Threads on Microsoft operating systems. For correct translation of directives, you must specify a special key during compilation, the value of which depends on the compiler (examples are given in the Table~\ref{compilerOpenMP:table}).
 	\begin{table}[H]
-		\caption{Compiler keys to run OpenMP}
+		\caption{Example options to enable host OpenMP (verify the installed toolchain)}
 		\label{compilerOpenMP:table}
 		\begin{center}
 			\begin{tabular}{|c|c|}
 				\hline
 				\textbf{Compiler name} & \specialcell{\textbf{Compiler Key} \\  \textbf{OpenMP}} \\
 				\hline
-				Gcc & -fopenmp \\
+				GCC & \texttt{-fopenmp} \\
 				\hline
-				icc (Intel C/C++ compiler) & -openmp \\
+				Clang / LLVM & \texttt{-fopenmp} \\
 				\hline
-				Sun C/C++ compiler & -xopenmp \\
+				Intel oneAPI C/C++ (Linux) & \texttt{-fiopenmp} \\
 				\hline
-				Visual Studio C/C++ compiler & /openmp \\
+				MSVC (basic host support) & \texttt{/openmp} \\
 				\hline
-				PGI (Nvidia C/C++ compiler) & -mp \\
-				\hline
+				% Vendor-specific offloading options are intentionally not implied here.
 			\end{tabular}
 		\end{center}
 	\end{table}
@@ -40,11 +39,11 @@
 	\end{itemize}
 	\par\textit{Incremental parallelization.} OpenMP allows you to parallelize a sequen-tial program using small iteration-edits, each of which will increase the para-lelism coefficient of the program. This feature is unique because most other technologies suggest a significant change in the structure of the parallelized program at the first stage of the parallelization process, i.e. The first workable parallel version of the program appears after a long process of debugging and programming of new components, which are inevitably added during parallelization. OpenMP does not have this lack.
 	\par\textit{Backward compatibility..} Most software technologies evolve with back-ward compatibility when a newer version of the program supports the functiona-lity of old files. The term \textit{forward compatibility} has the opposite meaning: files created in the new version program remain functional when using the old version of the program. In the case of OpenMP, this means that the parallelized program will be correctly compiled in single-threaded mode even on an old compiler that does not support OpenMP. It is important to note that direct compatibility is ensured if, during parallelization, library functions of OpenMP are not used, and only preprocessor directives are present. If you have library functions, to ensure backward compatibility, you will need to write stub functions in the "omp.h"\ file (some compilers can generate these stubs using a special key).
-	\par\textit{High level of abstractions.} A single preprocessor OpenMP directive after processing by the compiler leads to a significant transformation of the source program with the addition of a large number of new logic, which is responsible for determining the number of processors available in the system, for starting and destroying threads, for distributing work between threads, etc. OpenMP takes care of all these operations; in return, the programmer receives a set of very high-level parallelization tools. High-level languages have a traditional drawback: in OpenMP there is no way to change some internal details of working with streams (for example, you cannot set the affinity of streams or reduce the overhead of creating / deleting streams).
+	\par\textit{High level of abstractions.} OpenMP expresses parallel work, data-sharing and synchronization using directives and runtime routines. The implementation manages teams and may reuse worker threads; entering and leaving a parallel region does not imply a fresh operating-system thread creation and destruction on every occasion. Affinity is configurable through mechanisms such as \texttt{OMP\_PLACES}, \texttt{OMP\_PROC\_BIND} and the \texttt{proc\_bind} clause. The concrete mapping and overhead remain implementation and environment dependent.
 	\par\textit{Low parallel transformation ratio (PTR)}. When parallelizing an existing sequential program, we need to make a fairly large number of changes to it. Let PTR be the ratio of the lines of the new program code that was added as a result of parallelization to the total number of lines of code in the program. In OpenMP, the CBT is usually significantly lower than most other parallelization technologies. This is due to the high level of abstraction of the OpenMP language (see the previous paragraph).
-	\par\textit{Support by the largest IT giants.} Already during the development of OpenMP, it was supported by the largest players in the IT world. This ensured not only the high quality of standard development, but also the availability of off-the-shelf implementations of the standard in popular compilers. Despite the past twenty years, OpenMP has not lost its adherents and support for the latest versions with a fairly low delay appears in compilers. For example, with the current version of the OpenMP 4.5 standard, the most popular compilers already support OpenMP 4.0. The only exception is Microsoft. Their compiler for several versions invariably only supports OpenMP 2.0.
+	\par\textit{Implementation support.} Standard publication and compiler implementation are different milestones. Modern compiler support is feature-specific, and host execution and device offloading may have different coverage. In particular, an option named OpenMP does not promise the entire latest specification. Consult the compiler's current implementation matrix and preserve the exact compiler, runtime and options in an experiment report. For MSVC, the documented \texttt{/openmp}, \texttt{/openmp:experimental} and \texttt{/openmp:llvm} options have distinct scope; do not infer full LLVM front-end support from the runtime name. See \url{https://learn.microsoft.com/en-us/cpp/build/reference/openmp-enable-openmp-2-0-support}.
 	\par\textit{Auto scaling.}  
-	Low-level parallelization technologies (POSIX Threads, OpenCL) offer the programmer to manually control the number of threads created when performing parallel work. This provides the ability to flexibly manage and configure the process of creating threads depending on the number of processors (cores) available to the system, but it requires a large amount of non-automated work from the programmer. In OpenMP, scaling is controlled automatically, i.e. OpenMP itself asks the number of available processors from the operating system and selects the number of threads to create. But if necessary, OpenMP leaves the ability to set the required number of threads manually.
+	OpenMP can choose a team size under the runtime's rules and resource constraints, and the program or environment can request a size through mechanisms such as \texttt{num\_threads} and \texttt{OMP\_NUM\_THREADS}. The selected team size is not a guarantee that each thread runs simultaneously on a dedicated core. Record actual team sizes and any affinity settings when interpreting scalability.
 	\par\textbf{Examples of OpenMP programs.} Consider the simplest examples of running parallel programs below, starting with the traditional programming example ''Hello, World'':
 	\begin{figure}[H]
 		\lstinputlisting{OpenMPExample1.cpp}

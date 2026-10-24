@@ -267,3 +267,13 @@ TSWLatexianTemp*
 ### TeX Patch ###
 # glossaries
 *.glstex
+
+# Concurrency Theatre build and local verification output
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+web/coverage/
+native/.build/
+.theatre-qa/
+.sites-runtime/

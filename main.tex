@@ -1,7 +1,23 @@
 \documentclass[14pt]{extarticle}
 
-\usepackage[utf8]{inputenc}
-\usepackage[russian]{babel}
+% Preserve the archival pdfLaTeX path; XeLaTeX also works without PSCyr.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[russian]{babel}
+  \usepackage{pscyr}
+  \renewcommand{\rmdefault}{ftm}
+\else
+  \usepackage{fontspec}
+  \usepackage{polyglossia}
+  \setdefaultlanguage{english}
+  \setotherlanguage{russian}
+  \setmainfont[AutoFakeSlant=0.18]{DejaVu Serif}
+  \setsansfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+  \newfontfamily\cyrillicfont[AutoFakeSlant=0.18]{DejaVu Serif}
+  \newfontfamily\cyrillicfonttt{DejaVu Sans Mono}
+\fi
 \usepackage[left=3cm, right=2.5cm, top=2cm, bottom=2cm]{geometry}
 \usepackage{graphicx}
 \usepackage{indentfirst} %indent first par
@@ -13,17 +29,16 @@
 
 \def\UrlBreaks{\do\/\do\-\do\_\do\%\do\.} %for cutting urls
 
-\usepackage{xr}		% for cross-file references
-\externaldocument{main} %
+% Internal references are resolved by LaTeX include/aux processing; no self-import.
 
 \usepackage{enumitem} %for list customization
 \setlist[itemize]{leftmargin=2cm,labelsep=0.5cm}
 \setlist[enumerate]{leftmargin=1.5cm}
 
-\usepackage{pscyr} %russian fonts
-\renewcommand{\rmdefault}{ftm}
+% Font setup is selected by the engine above.
 
 \tolerance=1200
+\emergencystretch=2em
 
 \graphicspath{ {./images/} }
 
@@ -59,7 +74,7 @@
   commentstyle=\color{dkgreen},    % comment style
   deletekeywords={...},            % if you want to delete keywords from the given language
   escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
-  extendedchars=\true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
   firstnumber=1,                % start line enumeration with line 1000
   frame=single,	                   % adds a frame around the code
   keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
@@ -87,7 +102,7 @@
 %\sloppy sparse auto-carry strings
 
 \begin{document}
-	\include{description} %incorrect year!!!
+	\include{description} % archival attribution plus the dated companion note
 	\include{tableOfContents}
 	\include{introduction}
 	\include{section1}
@@ -97,6 +112,7 @@
 	\include{section5}
 	\include{section6}
 	\include{section7}
+	\include{concurrencyTheatre} % companion edition, audited 24 October 2026
 %	\include{section8}
 %	\include{section9}
 %	\include{bibliography}
