@@ -1,0 +1,47 @@
+name: Concurrency Theatre
+on:
+  push:
+    branches: [master, feature/concurrency-theatre, 'integration/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install pinned dependencies
+        working-directory: web
+        run: npm ci --ignore-scripts
+      - name: Pure models, content, codecs and real native OpenMP
+        run: node --test web/tests/*.test.js tests/*.test.js
+      - name: Build static application
+        working-directory: web
+        run: npm run build
+      - name: Install official test browser
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Browser integration and GPU software adapter
+        working-directory: web
+        run: npx playwright test
+      - name: Preserve browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: theatre-browser-evidence
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 14
+      - name: Static deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: concurrency-theatre
+          path: web/dist/

@@ -1,11 +1,11 @@
 { %section4_4
 	\subsection{Task variants}
-	\par The task variants are selected in accordance with the following description of the stages, given that the number $ A = LN*FN $, where LN and FN mean the number of letters in the last name and the first name of the student. You select the variant number in the corresponding tables by the formula $ X = 1 + ((A\ mod\ 47)\ mod\ B) $, where В is the number of elements in the corresponding table, and the mod operation means the remainder of the division. For example, if $A=476$ and $B=5$, we get $\textbf{Х = 1 + ((470+6) mod 47) mod 5) = 1 + (6 mod 5) = 2}$. The order of calculation must be as follows:
+	\par The task variants are selected in accordance with the following description of the stages, given that the number $ A = LN*FN $, where LN and FN mean the number of letters in the last name and the first name of the student. You select the variant number in the corresponding tables by the formula $ X = 1 + ((A\ mod\ 47)\ mod\ B) $, where B is the number of elements in the corresponding table, and the mod operation means the remainder of the division. For example, if $A=476$ and $B=5$, we get $\textbf{X = 1 + ((470+6) mod 47) mod 5) = 1 + (6 mod 5) = 2}$. The order of calculation must be as follows:
 	\begin{enumerate}
 		\item\textbf{Generate Stage.} Form an array M1 of dimension $ N $, filling it with the function \texttt{rand\textunderscore r} (you cannot use \texttt{rand}) with random real numbers that have a uniform law in the range from 1 to A inclusively. Similarly, form an array of M2 of dimension N / 2 with random real numbers in the range from $ A $ to $ 10*A $.
 		\item\textbf{Map Stage.} Apply an operation from the table to each element in the M1 array:
 			\begin{center}
-				\begin{tabular}{|c|c|}
+				\begin{adjustbox}{max width=\linewidth}\begin{tabular}{|c|c|}
 					\hline
 					\specialcell{\textbf{Number of}\\ \textbf{the variant}} & \textbf{Operation} \\
 					\hline
@@ -23,11 +23,11 @@
 					\hline
 					7 & \specialcell{Square root exponent\\ (i.e. $ M1[i] = exp(sqrt(M1[i]))) $} \\
 					\hline
-				\end{tabular}
+				\end{tabular}\end{adjustbox}
 			\end{center}
 			Then, in the M2 array, add each element in turn with the previous one (you will need a copy of the M2 array, from which you will need to take operands for this), and apply an operation from the table to the result of the addition (assume that for the initial element of the array, the previous element is zero):
 			\begin{center}
-				\begin{tabular}{|c|c|}
+				\begin{adjustbox}{max width=\linewidth}\begin{tabular}{|c|c|}
 					\hline
 					\specialcell{\textbf{Number of}\\ \textbf{the variant}} & \textbf{Operation} \\
 					\hline
@@ -47,11 +47,11 @@
 					\hline
 					8 & Square root after multiplying by e \\
 					\hline
-				\end{tabular}
+				\end{tabular}\end{adjustbox}
 			\end{center}
 		\item\textbf{Merge Stage.} In arrays M1 and M2 apply the operation from the table to all elements in pairs with the same indexes in (write the result in M2): 
 			\begin{center}
-				\begin{tabular}{|c|c|}
+				\begin{adjustbox}{max width=\linewidth}\begin{tabular}{|c|c|}
 					\hline
 					\specialcell{\textbf{Number of}\\ \textbf{the variant}} & \textbf{Operation} \\
 					\hline
@@ -67,11 +67,11 @@
 					\hline
 					6 & Absolute difference \\
 					\hline
-				\end{tabular}
+				\end{tabular}\end{adjustbox}
 			\end{center}
 		\item\textbf{Sort Stage.} The resulting array must be sorted by the method specified in the table (you cannot use library functions for this; you can take the implementation as freely available source code):
 			\begin{center}
-				\begin{tabular}{|c|c|}
+				\begin{adjustbox}{max width=\linewidth}\begin{tabular}{|c|c|}
 					\hline
 					\specialcell{\textbf{Number of}\\ \textbf{the variant}} & \textbf{Operation} \\
 					\hline
@@ -89,9 +89,9 @@
 					\hline
 					7 & Selection sort \\
 					\hline
-				\end{tabular}
+				\end{tabular}\end{adjustbox}
 			\end{center}
-		\item\textbf{Reduce Stage.} Calculate the sine sum of those array M2 elements, which give an even number when divided by the minimum non-zero element of the mass M2 (when determining parity, count only the integer part of the number). The result of the program at the end of the fifth stage must be a single number X, which should be used for verification of the program after making changes to it (for example, before and after parallelization, the final number X  should not change within the margin of error). The value of the number X should be reported for different values of N.
+		\item\textbf{Reduce Stage.} Calculate the sine sum of those array M2 elements, which give an even number when divided by the minimum non-zero element of the array M2 (when determining parity, count only the integer part of the number). The result of the program at the end of the fifth stage must be a single number X, which should be used for verification of the program after making changes to it (for example, before and after parallelization, the final number X  should not change within the margin of error). The value of the number X should be reported for different values of N.
 		\par
 	\end{enumerate}
 }

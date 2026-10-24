@@ -16,7 +16,7 @@
 	\par Here are examples of how the c-program in the src.c file can be automatically parallelized using some popular compilers:
 	\begin{itemize}
 		\item Compiler GNU Compiler Collection:	 \\
-\texttt{gcc -O3 -floop-parallelize-all -ftree-parallelize-loops=K -fdump-tree-parloops-details src.c}. \\ In this case, the programmer can choose the value of the parameter K, which is recommended to be set equal to the number of cores (processors). Features of the auto-parallelization implementation in gcc are dedicated to an independent project:\\ \url{https://gcc.gnu.org/wiki/AutoParInGCC}. 
+\texttt{gcc -O3 -floop-parallelize-all \\-ftree-parallelize-loops=K \\-fdump-tree-parloops-details src.c}. \\ In this case, the programmer can choose the value of the parameter K, which is recommended to be set equal to the number of cores (processors). Features of the auto-parallelization implementation in gcc are dedicated to an independent project:\\ \url{https://gcc.gnu.org/wiki/AutoParInGCC}. 
 		\item Intel compiler:	 
 \texttt{icc -c -parallel -par-report file.cc}
 		\item Oracle compiler:	 

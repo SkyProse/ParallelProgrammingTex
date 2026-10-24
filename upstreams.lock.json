@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "integrationDate": "2026-10-24",
+  "en": {
+    "repository": "s70c3/ParallelProgrammingTexEn",
+    "commit": "9e68958eb5885e0ad8e948570d49e096ad2366ee",
+    "tree": "131495ec7d55ad946ebd7b9b25866531843938cd",
+    "date": "2020-02-26"
+  },
+  "ru": {
+    "repository": "shilko2013/ParallelProgrammingTex",
+    "commit": "53535f92db505a5d0442dca5a3918fe3ea78189a",
+    "tree": "e7b5ad96ee4ed0b87957b5620041d5b17a5eb9d0",
+    "date": "2021-11-05",
+    "snapshot": "editions/ru",
+    "fileCount": 152
+  },
+  "theatre": {
+    "repository": "SkyProse/ParallelProgrammingTex",
+    "commit": "2a18af19fb696cb7c6780115bc4caf8cbf622807",
+    "date": "2026-10-24"
+  },
+  "importedListings": {
+    "listings/CreatePosix.c": "d5a2a2122538db49956ef2039c0257c055c061db",
+    "listings/IncludePThreads.c": "0483eea040155e59e7b6843934156414ff1e472b",
+    "listings/IncludeSemaphore.c": "328675957fd9116b6f7f82e88cdb9186f80c7ac2",
+    "listings/InitPosix.c": "ec8fecc6fefcef2ae4bd7c490e8f1f6d38f303f2",
+    "listings/MutexExample.c": "5f5b1eb6b09d1828f10e38e2339b1d0b5ac360da",
+    "listings/OpenCLContextExample.c": "923e24943b90b44c876c3e26a16d305c7ee2ecde",
+    "listings/OpenCLKernelExample.c": "dc23f9da3712bec9c6f19d18aa5efbb89f15596e",
+    "listings/SemaphoreInit.c": "500f18ebcf93e4c9e3e4cf40ca335606a2c5d994",
+    "listings/ThreadStruct.c": "704df31467b79e001a225ab1a936fc9c7d225d61",
+    "listings/WithMutex.c": "a3cd827f875a6a11dc337611bb9d61b3178972fa",
+    "listings/WithPosix.c": "61bb79146ad1b740b969c5649105587b405be6a8",
+    "listings/WithoutMutex.c": "f6b745d83ae3a3e517fffc418d3d3548191b3a3d",
+    "listings/WithoutPosix.c": "77375b92bb8bab4f400734f1229aa62dee700774",
+    "listings/includeIPP.c": "622cf472dfa397a72262e8328900ce4a2e395467",
+    "listings/withIPP.c": "4c0d36fff21a39e50d92a6c8c48aa3d172dcdae6",
+    "listings/withoutIPP.c": "567ec5c335cb34b5ba72678c8c8a62612fd39444"
+  },
+  "chapterMap": {
+    "section2_6.tex": "section2_6.tex",
+    "section3_3.tex": "intelIPP.tex",
+    "section3_4.tex": "section3_3.tex",
+    "section3_5.tex": "posixThreads.tex",
+    "section3_6.tex": "section3_4.tex",
+    "section3_7.tex": "section3_5.tex"
+  }
+}

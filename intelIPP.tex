@@ -1,0 +1,14 @@
+{ % Adapted from RU 53535f9, section3_3.tex; stable English filenames retained.
+\subsection{Intel Integrated Performance Primitives}
+\label{IPP:section}
+\par\textbf{Optimizing common data-processing operations.} Low-level libraries can provide optimized building blocks for processing images, signals and numerical arrays. Intel Integrated Performance Primitives (Intel IPP) is one such library.
+\par The historical Russian chapter lists audio and video processing, computer vision, cryptography, compression, colour conversion, image and signal processing, visualization, speech-related operations, strings and vector/matrix mathematics as application areas. This is a historical overview, not a promise that every API or domain is available in every release. Check the documentation of the installed package.
+\par Include the library's header before calling its functions:
+\lstinputlisting{includeIPP.c}
+\par The source illustrates replacing a loop that computes the absolute value of a sine by calls operating on an entire array:
+\lstinputlisting{withoutIPP.c}
+\lstinputlisting{withIPP.c}
+\par\textbf{Editorial correction.} These two listings are preserved exactly as imported, but are not equivalent verified programs. In C, \texttt{abs} is the integer absolute-value function; a floating-point reference calculation should use \texttt{fabs(sin(x))} from \texttt{math.h}. Confirm the actual IPP function signatures, accuracy variants, supported in-place operation and return status against the installed release. In particular, do not assume that a sine function's accuracy suffix is valid for the absolute-value function as well.
+\par A shorter expression is not evidence of a faster or numerically equivalent implementation. Compare equal inputs and accuracy requirements, account for memory allocation and threading configuration, and report the measured workload. The historical source's unconditional performance claim has therefore not been repeated as a guarantee.
+\par Official product and documentation entry point: \url{https://www.intel.com/content/www/us/en/developer/tools/oneapi/ipp.html}. The full unmodified Russian source remains in \path{editions/ru/section3_3.tex}.
+}

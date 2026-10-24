@@ -4,7 +4,7 @@
 	\par Let $N$ be the number of parallelized operations, $ M $ be the number of non-parallelizable operations,  $t_c$ be the execution time of one operation, $p$ be the number of calculators (cores), $T_i$ be the program execution time using $i$ parallel threads on $i$ calculators, $\alpha$ is a certain scaling factor that encapsulates the amount of time required to create, delete a stream, and other overhead operations.
 According to the Formula~\eqref{AmdalSFromP:equation}, $S(p)\;=\;\frac{T_1}{T_p}$.
 	\par First we find $ T_1 $. Since this code is linearly executed, the time spent on its execution will be equal to the number of operations times the time it takes to execute one operation: $T_1\;=\;t_c(N\;+\;M)$. 
-	\par The execution time of the parallel $T_p$ program includes the time to create the stream: $t_c\alpha(p\;-\;1)N$ need to create $(p\;-\;1)$ new threads, since the main thread has already been created and for each spend some time $\alpha$),  $\frac {t_cN}p$ parallel code running time on all cores: $t_cM$. Total, dividing $T_1$ на $T_p$, we get the formula of Amdahl’s law according to prof. Boukhanovsky:
+	\par The execution time of the parallel $T_p$ program includes the time to create the stream: $t_c\alpha(p\;-\;1)N$ need to create $(p\;-\;1)$ new threads, since the main thread has already been created and for each spend some time $\alpha$),  $\frac {t_cN}p$ parallel code running time on all cores: $t_cM$. Total, dividing $T_1$ to $T_p$, we get the formula of Amdahl’s law according to ITMO University professor Alexander Boukhanovsky.
 	\begin{equation}
 		\label{AmdalBuhunovsky:equation}
 		S(p,N)\;=\;\frac{T_1}{T_p}\;=\;\frac{N\;+\;M}{\alpha(p\;-\;1)N\;+\;\frac Np\;+\;M}

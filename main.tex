@@ -1,29 +1,44 @@
 \documentclass[14pt]{extarticle}
 
-\usepackage[utf8]{inputenc}
-\usepackage[russian]{babel}
+% Preserve the archival pdfLaTeX path; XeLaTeX also works without PSCyr.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[utf8]{inputenc}
+  \usepackage[russian,english]{babel}
+  \usepackage{pscyr}
+  \renewcommand{\rmdefault}{ftm}
+\else
+  \usepackage{fontspec}
+  \usepackage{polyglossia}
+  \setdefaultlanguage{english}
+  \setotherlanguage{russian}
+  \setmainfont[AutoFakeSlant=0.18]{DejaVu Serif}
+  \setsansfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+  \newfontfamily\cyrillicfont[AutoFakeSlant=0.18]{DejaVu Serif}
+  \newfontfamily\cyrillicfonttt{DejaVu Sans Mono}
+\fi
 \usepackage[left=3cm, right=2.5cm, top=2cm, bottom=2cm]{geometry}
 \usepackage{graphicx}
 \usepackage{indentfirst} %indent first par
-\usepackage{hyperref}
+\usepackage[hidelinks]{hyperref}
 \usepackage{xurl}
-\usepackage[font=normalsize,labelfont=it,justification=centering]{caption} %for customize caption
+\usepackage[font=normalsize,labelfont=it,justification=centering, figurewithin= none, tablewithin=none]{caption} %for customize caption
 \usepackage{float} %for figure position
 \usepackage{amsmath} %for math equations
+\usepackage{tabularx}
+\def\UrlBreaks{\do\/\do\-\do\_\do\%\do\.\do\#} %for cutting urls
 
-\def\UrlBreaks{\do\/\do\-\do\_\do\%\do\.} %for cutting urls
-
-\usepackage{xr}		% for cross-file references
-\externaldocument{main} %
+% Internal references are resolved by LaTeX include/aux processing; no self-import.
 
 \usepackage{enumitem} %for list customization
 \setlist[itemize]{leftmargin=2cm,labelsep=0.5cm}
 \setlist[enumerate]{leftmargin=1.5cm}
 
-\usepackage{pscyr} %russian fonts
-\renewcommand{\rmdefault}{ftm}
+% Font setup is selected by the engine above.
 
 \tolerance=1200
+\emergencystretch=2em
 
 \graphicspath{ {./images/} }
 
@@ -49,8 +64,8 @@
 \usepackage{color} %colors for listings
 \definecolor{dkgreen}{rgb}{0,0.6,0}
 \definecolor{gray}{rgb}{0.5,0.5,0.5}
-\definecolor{mauve}{rgb}{0.58,0,0.82}	
-\lstset{ 
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+\lstset{
   backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
   basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
   breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
@@ -59,7 +74,7 @@
   commentstyle=\color{dkgreen},    % comment style
   deletekeywords={...},            % if you want to delete keywords from the given language
   escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
-  extendedchars=\true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
   firstnumber=1,                % start line enumeration with line 1000
   frame=single,	                   % adds a frame around the code
   keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
@@ -79,15 +94,29 @@
   title=\relax,                   % \lstname show the filename of files included with \lstinputlisting; also try caption instead of title
   inputpath=listings, %relative path to the listings,
   xleftmargin=5.0ex, % left indent
-  belowskip=-2.5em,
+  belowskip=0.6em,
   aboveskip=0.5em,
   inputencoding=utf8
 }
 
 %\sloppy sparse auto-carry strings
 
+
+% Allow three-digit page numbers in this longer integrated edition.
+\makeatletter
+\renewcommand{\@pnumwidth}{2.8em}
+\renewcommand{\@tocrmarg}{3.5em}
+\makeatother
+\usepackage{adjustbox}
+
 \begin{document}
-	\include{description} %incorrect year!!!
+	\pagestyle{empty}
+    \include{CoverTitlePage}
+    \include{TitlePage}
+    \pagestyle{plain}
+    \setcounter{page}{1}
+    \include{description}
+    \include{integrationNotes}
 	\include{tableOfContents}
 	\include{introduction}
 	\include{section1}
@@ -97,7 +126,8 @@
 	\include{section5}
 	\include{section6}
 	\include{section7}
-%	\include{section8}
-%	\include{section9}
-%	\include{bibliography}
+	\include{section8}
+    \include{section9}
+    \include{concurrencyTheatre} % companion edition, audited 24 October 2026
+    \include{bibliography}
 \end{document}
