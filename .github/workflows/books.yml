@@ -17,10 +17,10 @@ jobs:
           node-version: '24'
       - name: Verify pinned source bytes and structural integration
         run: node --test tests/integration.test.js tests/posix-native.test.js
-      - name: Install reproducible typesetting prerequisites
+      - name: Install typesetting prerequisites
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends texlive-xetex texlive-latex-extra texlive-lang-cyrillic fonts-dejavu-core
+          sudo apt-get install -y --no-install-recommends texlive-xetex texlive-latex-extra texlive-lang-cyrillic texlive-fonts-recommended texlive-plain-generic fonts-dejavu-core
       - name: Build English and Russian books without modifying source snapshots
         run: python3 scripts/build_books.py
       - name: Confirm exact archival bytes after building
