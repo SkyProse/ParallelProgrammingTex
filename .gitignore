@@ -277,3 +277,7 @@ web/coverage/
 native/.build/
 .theatre-qa/
 .sites-runtime/
+
+# Integration build outputs; pinned source editions are not generated.
+/build/
+/artifacts/

@@ -7,22 +7,22 @@ value_type * dequeue() {
 		h = m_pHead;
 		pNext = h->m_pNext;
 		
-		// кто-то успел изменить связь между головой и следующим узлом
+		// someone has changed the relationship between the head and the next node
 		if (m_pHead.load() != h)
 			continue;
 		
-		//очередь пуста, голова всегда dummy node
+		//queue is empty, head is always dummy node
 		if (pNext == nullptr)
 			return nullptr;
 		
-		//хвост оказался не продвинут, пытаемся продвинуть
+		//tail was not pushed forward, trying to promote
 		node_type * t = m_pTail.load();
 		if (h == t) {
 			m_pTail.compare_exchange_strong(t, pNext);
 			continue;
 		}
 		
-		//продвигаем голову
+		//push forward head
 		if (m_pHead.compare_exchange_strong(h, pNext))
 			break;
 	}

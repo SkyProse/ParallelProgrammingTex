@@ -2,15 +2,15 @@
 	\subsection{Work sequence}
 	\begin{enumerate}
 		\item Install Linux and the GCC compiler version 4.7.2 or higher on a computer with a multi-core processor. If you cannot install Linux or you do not have a computer with a multi-core processor, you can perform laboratory research on a virtual machine.
-		\item Write a console program in C completing task in item 4 (see below). The program cannot use library functions for sorting, performing matrix operations, or calculating statistical values. The program cannot use library functions that are not represented in standard \texttt{stdio.h}, \texttt{stdlib.h}, \texttt{math.h} and \texttt{sys/time.h} header files. You must run the task 50 times with different initial values of the random number generator (RNG). The structure of the program is approximately as follows:
+		\item Write a console program in C completing task in item 4 (see below). The program cannot use library functions for sorting, performing matrix operations, or calculating statistical values. The program cannot use library functions that are not represented in standard \texttt{stdio.h}, \texttt{stdlib.h}, \texttt{math.h} and \texttt{sys/time.h} header files. You must run the task 100 times with different initial values of the random number generator (RNG). The illustrative structure below uses the 2021 assignment's 100 repetitions; the original 50-iteration sketch is preserved as \path{listings/lab1Example.cpp}:
 			\begin{figure}[H]
-				\lstinputlisting{lab1Example.cpp}
+				\lstinputlisting{lab1Example2026.cpp}
 			\end{figure}
-		\item Сompile the program without using automatic parallelization following the next command: "\texttt{/home/user/gcc -O3 -Wall -Werror \\-o lab1-seq lab1.c}"
+		\item Compile the program without using automatic parallelization following the next command: "\texttt{/home/user/gcc -O3 -Wall -Werror \\-o lab1-seq lab1.c}"
 		\item Compile the written program using the built-in GCC tool for automatic parallelization (Graphite) with the following command  "\texttt{/home/user/\\gcc -O3 -Wall -Werror -floop-parallelize-all \\-ftree-parallelize-loops=K lab1.c -o lab1-par-K}” \\(assign at least 4 different integer values to the variable $ K $ in turn and explain your choice).
 		\item The result is one non-parallelized program and four or more parallelized programs.
 		\item Close all application programs running on the operating system (including Winamp, uTorrent, browsers, and Skype) so that they do not affect the results of subsequent experiments.
-		\item Run the lab1-seq file from the command line, increasing the value of $ N $ to the value of $ N1 $, at which the execution time exceeds 0.01 s. Similarly, find the value of $ N=N2 $, at which the execution time exceeds 2 s.
+		\item Run the lab1-seq file from the command line, increasing the value of $ N $ to the value of $ N1 $, at which the execution time exceeds 0.01 s. Similarly, find the value of $ N=N2 $, at which the execution time exceeds 5 s.
 		\item Perform the following experiments, using the found values $ N1 $ and $ N2 $ (we recommend writing a script to automate the experiments):
 			\begin{itemize}
 				\item run lab1-seq for values \\$N={N1,\;N1+\Delta,\;N1+2\Delta,\;N1+3\Delta,…,\;N2}$ and write the resulting  delta\textunderscore ms(N) time values to the $seq(N)$ function;
@@ -22,8 +22,8 @@
 		\item Find the algorithm's computational complexity before and after parallelization, compare the results obtained.
 		\sloppy
 		\item\textbf{Optional task \#1 (to get good and excellent mark).} Perform similar experiments using the Solaris Studio compiler (or any other compiler of your choice) instead of GCC. Use the following options for automatic parallelization when compiling: {\small \texttt{solarisstudio -cc -O3 -xautopar -xloopinfo lab1.c}}.
- 		\item\textbf{Optional task \#2 (to get good and excellent mark).} You should perform this task only after the previous task has been completed. Perform similar experiments described above, using the Intel ICC compiler instead of GCC (or any other). Use the following options for automatic parallelization when compiling with ICC: \verb+«icc -parallel -par-report -par-threshold K -o lab1-icc-par-K lab1.c»+.
+ 		\item\textbf{Optional task \#2 (to get excellent mark).} You should perform this task only after the previous task has been completed. Perform similar experiments described above, using the Intel ICC compiler instead of GCC (or any other). Use the following options for automatic parallelization when compiling with ICC: \verb+«icc -parallel -par-threshold=0 -par-num-threads=K -o lab1-icc-par-K lab1.c»+.
 			\par If the \verb+«-par-report»+ key does not work in your compiler version, use a more up-to-date key \verb+«-qopt-report-phase=par»+.
 	\end{enumerate}
-	
+
 }

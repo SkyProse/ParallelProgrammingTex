@@ -1,0 +1,49 @@
+name: Integrated textbooks
+on:
+  push:
+    branches: [master, 'integration/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  books:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify pinned source bytes and structural integration
+        run: node --test tests/integration.test.js tests/posix-native.test.js
+      - name: Install reproducible typesetting prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends texlive-xetex texlive-latex-extra texlive-lang-cyrillic fonts-dejavu-core
+      - name: Build English and Russian books without modifying source snapshots
+        run: python3 scripts/build_books.py
+      - name: Confirm exact archival bytes after building
+        run: node --test tests/integration.test.js
+      - name: Source archive
+        run: git archive --format=zip --output=build/parallel-programming-sources.zip HEAD
+      - name: Preserve books and sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: parallel-programming-books-and-sources
+          path: |
+            build/en/parallel-programming-en.pdf
+            build/ru/parallel-programming-ru.pdf
+            build/parallel-programming-sources.zip
+          retention-days: 30
+      - name: Preserve typesetting diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: textbook-build-logs
+          path: |
+            build/en/*.txt
+            build/en/*.log
+            build/ru/*.txt
+            build/ru/*.log
+          retention-days: 14

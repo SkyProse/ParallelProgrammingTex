@@ -84,7 +84,7 @@ Buffer views, immediate address space и HTML-in-Canvas диагностирую
 
 ## Сборка учебника
 
-Новая глава подключена из `main.tex` после лабораторной № 4. Архивный `main.pdf` сохранён как исторический артефакт; он не является автоматически обновляемым предпросмотром исходников.
+Новая глава подключена из `main.tex` после лабораторной № 6. Архивный `main.pdf` сохранён как исторический артефакт; он не является автоматически обновляемым предпросмотром исходников.
 
 Для переносимой сборки используйте XeLaTeX с пакетами `fontspec`, `polyglossia`, остальными пакетами из преамбулы и шрифтами DejaVu Serif, Sans и Sans Mono. Эта ветка не требует архивного PSCyr. Повторные проходы нужны для оглавления и перекрёстных ссылок; в проверенной чистой сборке они стабилизировались после третьего прохода. Из корня репозитория:
 
@@ -100,3 +100,8 @@ xelatex -interaction=nonstopmode -halt-on-error -output-directory="$ct_tex_build
 Путь pdfLaTeX сохранён для исторического окружения: ему нужны PSCyr, UTF-8 inputenc и русская конфигурация Babel/шрифтов. В новой ветке Unicode-текст отделён пробелами от имён TeX-команд, а импорт собственного `main.aux` через `xr` удалён: взаимный импорт основного документа самому себе не нужен и нарушал повторную сборку.
 
 Успешная компиляция не равна полной редакторской проверке книги. Перед заменой архивного PDF нужно отдельно просмотреть все страницы, таблицы, листинги и переносы. Новая глава, изменённые выходные сведения и обновлённый раздел OpenMP прошли целевой визуальный просмотр; исторические широкие таблицы и прочие неизменённые главы остаются за пределами этой проверки.
+
+
+## Integrated edition update (2026-10-24)
+
+The source pin at the beginning describes the historical theatre adaptation. The working book now also incorporates the pinned English upstream and preserves the complete Russian source under `editions/ru/`. The companion follows all six labs. Current PDFs are generated under `build/`; the root `main.pdf` remains the historical English upstream binary. See `INTEGRATION.md` for provenance, the non-duplicating chapter map and the separate corrected Pthreads example.

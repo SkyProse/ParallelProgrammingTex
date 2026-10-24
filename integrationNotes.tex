@@ -1,0 +1,9 @@
+{
+\section*{About this integrated edition}
+\addcontentsline{toc}{section}{About this integrated edition}
+\par This is an independent working edition assembled on 24 October 2026, not a new official publication by ITMO University. The historical title pages identify the English source edition; their year and author credits have not been changed to imply a new endorsement.
+\par The English text incorporates the source revision of 26 February 2020. The complete Russian revision of 5 November 2021 is preserved separately, byte-for-byte, under \path{editions/ru/}. The Russian additions also credit D. A. Pushkarev alongside V. V. Sosnin, P. V. Balakshin and D. S. Shilko. Commit identifiers, file hashes and the chapter mapping are recorded in \path{upstreams.lock.json} and \path{docs/INTEGRATION.md}.
+\par Profiling, Intel IPP and POSIX Threads have been restored as English adaptations of the Russian material. OpenCL and concurrency errors were already present under different filenames and are not duplicated. Laboratories 5 and 6 and the historical bibliography are included again. The Russian laboratory-1 update to 100 repetitions and a five-second upper target has been ported; historical compiler flags still need checking against the chosen toolchain.
+\par Original code fragments are retained for provenance, including their defects. An adjacent editorial note distinguishes them from corrected, tested examples in \path{native/}. In particular, \path{listings/WithPosix.c} is not the verified POSIX example: use \path{native/pthreads_add.c}. Merely preserving a historical listing does not certify its correctness.
+\par Concurrency Theatre retains its separate boundaries between executable teaching models, measured computations and imported observations. No benchmark result or publication status is inferred from the existence of this combined PDF.
+}

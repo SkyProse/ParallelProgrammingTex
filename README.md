@@ -1,5 +1,27 @@
 # ParallelProgrammingTex · Concurrency Theatre
 
+## Integrated sources - 24 October 2026
+
+This branch combines the complete English upstream (26 February 2020), an exact
+152-file Russian snapshot (5 November 2021), and the existing Concurrency Theatre.
+OpenCL and concurrency errors were **renumbered, not missing**. Profiling, Intel
+IPP and POSIX Threads are restored without duplicating those chapters; labs 5/6
+and the bibliography are active again. The Russian additions also retain the
+credit to D. A. Pushkarev.
+
+See [the integration audit](docs/INTEGRATION.md), [source pins](upstreams.lock.json)
+and [preserved editions](editions/README.md). The root `main.pdf` is historical;
+new books are produced under `build/en/` and `build/ru/`:
+
+```sh
+node --test web/tests/*.test.js tests/*.test.js
+python3 scripts/build_books.py
+```
+
+The corrected native Pthreads example is `native/pthreads_add.c`, not the
+unmodified archival `listings/WithPosix.c`. Historical defects and build-only
+transformations are documented rather than silently hidden.
+
 Университетский учебник о параллельном программировании и его интерактивный спутник: **остановите исполнение, выберите следующий поток и проверьте, что именно изменило результат**.
 
 Текст пособия и исторические C++-листинги сохранены. Датированные уточнения 2026 года, аудит примеров и новая глава объясняют границы учебных моделей и современные возможности браузера. Исходная ревизия: `1c53d6eb08a7d0041a6f54728b6ba90a59507454`, 19 февраля 2020 года.

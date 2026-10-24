@@ -3,7 +3,7 @@
 	\label{OpenCL:section}
 	\par\textbf{Brief description of the technology.} OpenCL is a framework for writing computer programs related to parallel computing on various graphic and central processors, as well as FPGA. OpenCL includes a programming language that is based on the C99 language standard, and an application programming interface. OpenCL provides concurrency at the instruction level and data level and is an implementation of the GPGPU technique. OpenCL is a fully open standard, its use is not subject to licensing fees. Using this technology, heterogeneous parallel computing can be performed (distribute tasks between different devices).
 	\par As we already know, it is possible to parallelize a program by tasks between a small number of productive cores (processors of modern PCs) or by data between thousands of simple slow cores (computing cores of modern GPUs). It is for problems solved using data parallelization that OpenCL is used.
-	\par\textbf{OpenCL Technology Architecture} OpenCL divides two types of devices: \textit{host}, which controls the common logic, and \ textit{device}, which perform the calculations. The \textit{host} is usually the central processor, while the \textit{device} is the GPU and other devices. \textit{Device} divided into compute modules \textit{computer units}, which in turn consist of processing elements \textit{(processing elements)} (Figure~\ref{OpenCLArchitecture:image}). Direct calculations are performed in the processing elements of the device.
+	\par\textbf{OpenCL Technology Architecture}. OpenCL divides two types of devices: \textit{host}, which controls the common logic, and \ textit{device}, which perform the calculations. The \textit{host} is usually the central processor, while the \textit{device} is the GPU and other devices. \textit{Device} divided into compute modules \textit{computer units}, which in turn consist of processing elements \textit{(processing elements)} (Figure~\ref{OpenCLArchitecture:image}). Direct calculations are performed in the processing elements of the device.
 	\begin{figure}[H]
 		\includegraphics[width=1\linewidth]{OpenCLArchitecture}
 		\caption{\textit{OpenCL Architecture}}
@@ -22,7 +22,7 @@ ID functions \textit{work-group} and \textit{work-item} are shown on Figure~\ref
 		\caption{\textit{OpenCL. Operation with work-group and work-item}}
 		\label{OpenCLWorkGroupItemExample:image}
 	\end{figure}
-	\par\textbf{Types of memory in OpenCL devices.} To interact with data, the programmer can use different levels of memory. On the Figure~\ref{OpenCLMemory:image}  we can see the following types of memory exist:
+	\par\textbf{Types of memory in OpenCL devices.} To interact with data, the programmer can use different levels of memory. On Figure~\ref{OpenCLMemory:image}  we can see the following types of memory exist:
 	\begin{itemize}
 		\item Private memory. The fastest of all kinds. Exclusive for every item of work.
 		\item Local memory. It can be used by the compiler with a large number of local variables in any function. In terms of speed characteristics, local memory is much slower than register memory. Access from work items in one work-group.

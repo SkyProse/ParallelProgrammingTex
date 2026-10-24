@@ -1,0 +1,29 @@
+{ % Adapted from RU 53535f9, section3_5.tex, with explicitly marked corrections.
+\subsection{POSIX Threads}
+\label{PThreads:section}
+\par\textbf{Explicit thread management.} The Pthreads API covers thread creation and joining, attributes, mutexes, condition variables and related synchronization. Unlike a high-level OpenMP loop directive, it requires the application to assign work and manage thread lifetimes explicitly.
+\lstinputlisting{IncludePThreads.c}
+\par The historical example adds ten to every element of an array. Its sequential fragment is:
+\lstinputlisting{WithoutPosix.c}
+\par\textbf{Read the archived example critically.} The following complete-looking listing is retained for comparison, not presented as a verified implementation. Its thread function does not return a value and its creation-error checks incorrectly compare the return code with \texttt{-1}.
+\lstinputlisting{WithPosix.c}
+\par A corrected, independently compiled counterpart is \path{native/pthreads_add.c}. It checks allocation and thread errors, joins only successfully created threads, retains each argument structure until the joins finish, covers uneven partitions, and verifies every output element. Its tests include an empty array and more threads than elements. Build it with \texttt{cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -pthread native/pthreads\_add.c -o pthreads-add}; run \texttt{./pthreads-add 11 3}.
+\par\textbf{Handles, creation and arguments.} A \texttt{pthread\_t} variable or an array of such variables stores thread identifiers; declaring one does not start a thread.
+\lstinputlisting{InitPosix.c}
+\lstinputlisting{CreatePosix.c}
+\par The four arguments of \texttt{pthread\_create} are a pointer to the output identifier, optional attributes (\texttt{NULL} selects defaults), a start routine of type \texttt{void *(*)(void *)}, and its argument. A structure can carry several values:
+\lstinputlisting{ThreadStruct.c}
+\par A zero return code means success. A nonzero return code is an error number, not necessarily \texttt{-1}; Linux documents \texttt{EAGAIN}, \texttt{EINVAL} and \texttt{EPERM}. Do not join an output identifier when creation failed. The routine may run before the creating thread continues, so arguments must already be initialized and remain alive.
+\par Returning from the start routine is equivalent to \texttt{pthread\_exit} with that return value. \texttt{pthread\_join} waits for a specified joinable thread and can collect the value. Joining is not restricted to a parent thread. Join each created joinable thread exactly once; check the return code. Linux documents \texttt{EDEADLK}, \texttt{EINVAL} and \texttt{ESRCH}, but these diagnostics do not make invalid thread-lifetime operations portable.
+\par\textbf{Mutexes.} A mutex protects a shared invariant by allowing one owner at a time to execute the corresponding critical region. Initialize it before use and destroy it only after all users have finished.
+\lstinputlisting{MutexExample.c}
+\par The source contrasts unsynchronized and mutex-protected updates of a shared sum:
+\lstinputlisting{WithoutMutex.c}
+\lstinputlisting{WithMutex.c}
+\par These are partial historical fragments. A concurrent unsynchronized update is a data race, not merely a promise of an occasionally inaccurate sum. The fragments also use arithmetic on \texttt{void *}, which is not standard C, omit return values, and depend on declarations not shown. A complete implementation should use a typed element pointer, check API results, and choose whether per-thread partial sums would avoid excessive contention.
+\par\textbf{Semaphores.} A counting semaphore represents available permits. A wait operation consumes a permit or waits; a post operation returns one. It is not an ownership-tracking mutex. A mutex has an owner, whereas a semaphore can also express producer/consumer notification.
+\lstinputlisting{IncludeSemaphore.c}
+\lstinputlisting{SemaphoreInit.c}
+\par For \texttt{sem\_init}, \texttt{pshared=0} selects sharing between threads in one process. A nonzero value selects sharing between processes and requires the semaphore object to reside in shared memory; merely setting the flag does not allocate that memory. The final argument is the initial count. Check platform support and initialization errors, and destroy the object only when it is no longer in use.
+\par Primary implementation references: \url{https://man7.org/linux/man-pages/man3/pthread_create.3.html}, \url{https://man7.org/linux/man-pages/man3/pthread_join.3.html} and \url{https://man7.org/linux/man-pages/man3/sem_init.3.html}. The original text and all imported snippets remain available in the frozen Russian edition.
+}

@@ -55,3 +55,11 @@
 - [Лабораторная № 4](https://github.com/SkyProse/ParallelProgrammingTex/blob/1c53d6eb08a7d0041a6f54728b6ba90a59507454/section7.tex).
 
 При следующих изменениях обновляйте дату аудита, источник факта и соответствующую проверку. Не превращайте датированную заметку 2026 года в бессрочное обещание о возможностях будущих компиляторов.
+
+## Upstream-integration addendum (2026-10-24)
+
+The complete 2021 Russian source is now preserved under `editions/ru/`; it is not a corrected-code collection. See `INTEGRATION.md` for the exact chapter map. OpenCL and concurrency errors were already in the English edition under different filenames.
+
+The 16 restored C fragments retain their source hashes. Known defects include the `pthread_create(...) == -1` checks and missing return in `WithPosix.c`; non-standard arithmetic on `void *` in the mutex fragments; integer `abs` in the scalar IPP example; and malformed kernel source, `sifeod`, and argument mismatches in `OpenCLKernelExample.c`. They must not be treated as standalone validated programs.
+
+The corrected, tested Pthreads counterpart is `native/pthreads_add.c`. The 2021 lab-1 task requires 100 repetitions, so the rendered sketch uses a separately named `listings/lab1Example2026.cpp`, leaving the original 50-iteration sketch intact. The Russian PDF build applies documented typographic transformations only to a disposable copy.

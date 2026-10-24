@@ -1,7 +1,7 @@
 name: Concurrency Theatre
 on:
   push:
-    branches: [master, feature/concurrency-theatre]
+    branches: [master, feature/concurrency-theatre, 'integration/**']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -21,7 +21,7 @@ jobs:
         working-directory: web
         run: npm ci --ignore-scripts
       - name: Pure models, content, codecs and real native OpenMP
-        run: node --test --test-isolation=none web/tests/*.test.js tests/native*.test.js
+        run: node --test web/tests/*.test.js tests/*.test.js
       - name: Build static application
         working-directory: web
         run: npm run build

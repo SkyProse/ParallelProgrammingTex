@@ -48,3 +48,16 @@
 ## Как поддерживать этот реестр
 
 При изменении сильного утверждения сначала определить, принадлежит ли оно архиву, спецификации, реализации браузера или измерению. Для архива сохранить immutable ссылку; для документации обновить дату и источник; для измерения сохранить его среду и сырые наблюдения. Новую draft-спецификацию не переводить в статус final по календарному ожиданию. Не переносить утверждение об одном renderer на другой compute backend.
+
+## Integration inputs and native API checks (2026-10-24)
+
+- English source: `s70c3/ParallelProgrammingTexEn`, commit `9e68958eb5885e0ad8e948570d49e096ad2366ee`.
+- Russian source: `shilko2013/ParallelProgrammingTex`, commit `53535f92db505a5d0442dca5a3918fe3ea78189a`.
+- Existing theatre: `SkyProse/ParallelProgrammingTex`, commit `2a18af19fb696cb7c6780115bc4caf8cbf622807`.
+- [Linux man-pages: pthread_create](https://man7.org/linux/man-pages/man3/pthread_create.3.html): start-routine type, argument lifetime and zero/nonzero result convention.
+- [Linux man-pages: pthread_join](https://man7.org/linux/man-pages/man3/pthread_join.3.html): joining, result retrieval and lifetime restrictions. Linux diagnostics are not generalized into portable guarantees for invalid operations.
+- [Linux man-pages: sem_init](https://man7.org/linux/man-pages/man3/sem_init.3.html): `pshared` and shared-memory requirements.
+- [Intel IPP](https://www.intel.com/content/www/us/en/developer/tools/oneapi/ipp.html): product/documentation entry point, not a guarantee that historical API spellings are current.
+- [Intel VTune Profiler](https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html): current product entry point for the historical profiling chapter.
+
+The Open Group specification pages were not accessible to the auditing browser; the retrieved native-interface references above are the Linux man-pages project documentation, not a claim to have fetched those specification pages.

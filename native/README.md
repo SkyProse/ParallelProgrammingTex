@@ -30,3 +30,19 @@ node --test --test-isolation=none --test-reporter=spec web/tests/compute*.test.j
 ```
 
 Tests compile the C++ runner in a temporary directory and compare native serial/OpenMP results with the browser kernel, including a non-divisible input length. They also verify packed/padded counters and reject unbounded requests. GPU execution is separately exercised in browser QA; a Node test does not establish GPU availability.
+
+
+## Corrected Pthreads teaching example
+
+`pthreads_add.c` is an independent C11 counterpart to the archived `WithPosix.c`,
+not a performance benchmark. It partitions an array, adds ten once per element,
+joins successfully created threads and verifies the entire output.
+
+```sh
+cc -std=c11 -O2 -Wall -Wextra -Werror -pedantic -pthread native/pthreads_add.c -o /tmp/pthreads-add
+/tmp/pthreads-add 11 3
+node --test tests/posix-native.test.js
+```
+
+Arguments are array size (0 through 10,000,000) and thread count (1 through 256).
+The JSON result reports verification and a checksum, never an invented timing.

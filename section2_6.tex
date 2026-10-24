@@ -1,0 +1,14 @@
+{ % Adapted from RU 53535f9, section2_6.tex; editorial integration 2026-10-24.
+\subsection{Profiling parallel programs}
+\label{profiling:section}
+\par Profiling collects information about a program's execution: time spent in routines, branch-prediction events, cache misses and related measurements. A profiler helps determine where the program spends resources and which parts prevent useful scaling.
+\par\textbf{The historical Intel Parallel Amplifier workflow.} The Russian source describes three complementary views:
+\begin{enumerate}
+\item Hotspot analysis identifies heavily used code and examines its call stacks.
+\item Concurrency analysis examines how effectively the program uses parallel execution.
+\item Lock and wait analysis locates time spent waiting for synchronization rather than doing useful work.
+\end{enumerate}
+\par Together, these views help explain processor utilization and guide the next optimization. Change one cause at a time, check numerical correctness, and repeat the measurements under a stated workload. A profiler's own overhead and access to hardware counters must also be considered when interpreting results.
+\par\textbf{Editorial note, 2026.} Intel Parallel Amplifier is the name used in the archived text, not a requirement for new experiments. Intel's current tool is VTune Profiler, with hotspot, memory and threading analysis: \url{https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html}. Tool support depends on the operating system, processor and analysis mode. The browser laboratory is not a replacement for native hardware-counter profiling.
+\par Historical reading retained from the source: \url{https://www.ixbt.com/soft/intel-parallel-amplifier.shtml}.
+}

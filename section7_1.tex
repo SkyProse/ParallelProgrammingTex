@@ -1,8 +1,8 @@
 { %section7_1
 	\subsection{Work sequence}
 	\begin{enumerate}
-		\item1.	In the program resulting from the execution of Laboratory research~\#3, change the Generate stage so that the generated set of random numbers does not depend on the number of threads running the program. For example, before calling \texttt{rand\textunderscore r},  at each iteration of $i$, you can call the \texttt{srand(f(i))} function, where \texttt{f} is an arbitrary function. You can think of and use any other method.
-		\item Replace the gettimeofday function calls to \texttt{omp\textunderscore get\textunderscore wtime}.
+		\item	In the program resulting from the execution of Laboratory research~\#3, change the Generate stage so that the generated set of random numbers does not depend on the number of threads running the program. For example, before calling \texttt{rand\textunderscore r},  at each iteration of $i$, you can call the \texttt{srand(f(i))} function, where \texttt{f} is an arbitrary function. You can think of and use any other method.
+		\item Replace the gettimeofday function calls to \path{omp_get_wtime}.
 		\item Parallelize the calculations at the Sort stage, for which you can perform sorting in two stages:
 			\begin{itemize}
 				\item Sort the first and the second half of the array in two independent threads (you can use the OpenMP Directive ''parallel sections''); 
@@ -20,6 +20,6 @@
 				\item Calculate the confidence interval with a confidence level of 95\% based on ten dimensions.
 			\end{itemize}
 			Give graphs of parallel acceleration for both methods in the same coordinate system, furthermore, giving the lower and upper bounds of the confidence interval by two independent graphs is advisable.
-		\item\textbf{Optional task (to get highest mark):} in part 3 at the Sort stage, perform parallel sorting of $k$ parts of the array (not two parts) in $k$ threads, where $k$ is the number of processors (cores) in the system, which becomes known only at the program execution stage using the command \texttt{«k = omp\textunderscore get\textunderscore num\textunderscore procs()}».
+		\item\textbf{Optional task (to get excellent mark):} in part 3 at the Sort stage, perform parallel sorting of $k$ parts of the array (not two parts) in $k$ threads, where $k$ is the number of processors (cores) in the system, which becomes known only at the program execution stage using the command \texttt{«k = omp\textunderscore get\textunderscore num\textunderscore procs()}».
 	\end{enumerate}
 }

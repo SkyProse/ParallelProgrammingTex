@@ -1,13 +1,13 @@
 { %section1_1
 	\subsection{History of parallel computing}
-	\par Conversation about the development of parallel computing is usually begun with the history of supercomputers. However, the world's first super-computer CDC6600, created in 1963, had only one central processor, so it can hardly be considered a full-fledged SMP system.
+	\par Conversation about the development of parallel computing is usually begun with the history of supercomputers. However, the world's first super-computer CDC6600, created in 1963, had only one central processor, so it can hardly be considered a full-fledged SMP system. The architecture of SMP (Symmetric Multiprocessing) implies the operation of several identical processors with shared RAM. The multi-core processor can be considered a special case of SMP-systems.
 	\par The third-ever CDC8600 supercomputer was designed to use four proces-sors with shared memory, which suggests the first use of SMP, but the CDC8600 was never released since its development was discontinued in 1972.
 	\par Only in 1983 was it possible to create a working supercomputer (Cray X-MP), which used two central processors that used shared memory. It is worth noting that a little earlier (in 1980) the first Russian multiprocessor computer Elbrus-1 appeared, however, it was significantly inferior in performance to supercomputers of that time.
 	\par Already in 1994 it was possible to freely buy a desktop computer with two processors, when ASUS released its first motherboard with two sockets - connectors for installing processors.
 	\par The next step in the development of SMP-systems was the emergence of multi-core processors. The first multi-core processor for mass use was POWER4, released by IBM in 2001. But the truly widespread multi-core architecture received only in 2005, when AMD and Intel released their first dual-core processors.
-	\par The Figure~\ref{GraphPartOfMultiCoreProcessorFromYear:image} shows how much CPU with a different number of cores occupied when creating supercomputers at different times (according to the materials of the site (\url{http://top500.org}). Shaded areas are marked with numbers 1, 2, 4, 6, 8, 10, 12, 16 to indicate the number of cores. The height of the region is equal to the relative frequency of use of processors of the corresponding type in the year under review.
+	\par Figure~\ref{GraphPartOfMultiCoreProcessorFromYear:image} shows how much CPU with a different number of cores occupied when creating supercomputers at different times (according to the materials of the site (\url{http://top500.org}). Shaded areas are marked with numbers to indicate the number of cores. The height of the region is equal to the relative frequency of use of processors of the corresponding type in the year under review.
 	\begin{figure}[H]
-		\includegraphics[width=1\linewidth]{GraphPartOfMultiCoreProcessorFromYear}
+		\includegraphics[width=1\linewidth]{graphPartOfMultiCoreProcessorFromYear}
 		\caption{\textit{Frequency of using processors with different number of cores when creating supercomputers}}
 		\label{GraphPartOfMultiCoreProcessorFromYear:image}
 	\end{figure}
